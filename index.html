@@ -6,7 +6,7 @@
 <title>Riri &amp; Me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#fbeef0; --panel:#fff7f8; --ink:#4a2a35; --muted:#a07a86;
@@ -47,15 +47,55 @@
   #toast{position:absolute; left:50%; top:10px; transform:translateX(-50%); background:rgba(74,42,53,.85); color:#fff; padding:5px 10px; border-radius:8px; font-size:13px; white-space:nowrap; opacity:0; transition:opacity .3s; pointer-events:none}
   #toast.show{opacity:1}
   #gamehud{position:absolute; left:8px; right:8px; top:8px; display:none; justify-content:space-between; font-size:16px; font-weight:700; color:#4a2a35; text-shadow:0 1px 0 #fff}
-  .actions{display:grid; grid-template-columns:repeat(6,1fr); gap:6px}
+  .actions{display:grid; grid-template-columns:repeat(7,1fr); gap:5px}
   .btn{border:2px solid var(--line); background:var(--panel); color:var(--ink); border-radius:12px; padding:6px 0 4px; font:inherit; font-size:11px; font-weight:600;
        display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; box-shadow:0 3px 0 var(--line); transition:transform .08s}
-  .btn b{font-size:22px; line-height:1.1; font-weight:400}
+  .btn{position:relative}
+  .btn .dot{position:absolute; top:-6px; right:-4px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ff4f7e; color:#fff; font-size:11px; line-height:18px; display:none; box-shadow:0 0 0 2px var(--bg); animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{transform:scale(1.15)}}
+  .btn b{font-size:20px; line-height:1.1; font-weight:400}
   .btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--line)}
   .btn.on{background:var(--pink); color:#fff; border-color:var(--pink-d)}
   #tray{position:absolute; left:50%; bottom:10px; transform:translateX(-50%); display:none; gap:6px; background:rgba(255,247,248,.95); border:2px solid #4a2a35; border-radius:12px; padding:6px}
   #tray button{font-size:24px; background:none; border:0; cursor:pointer; padding:2px 4px}
   #tray.show{display:flex}
+  .bubble.long{white-space:normal; width:min(78%,300px); text-align:center; line-height:1.3}
+  .bubble.long.center:after{left:72%}
+  /* love box */
+  #box{position:fixed; inset:0; background:rgba(60,25,40,.45); display:none; align-items:flex-end; justify-content:center; z-index:10}
+  #box.show{display:flex}
+  .sheet{width:100%; max-width:440px; max-height:88%; background:var(--panel); border-radius:18px 18px 0 0; border:3px solid var(--line); border-bottom:0;
+         display:flex; flex-direction:column; animation:up .22s ease-out}
+  @keyframes up{from{transform:translateY(40px); opacity:0}}
+  .sheet-head{display:flex; align-items:center; justify-content:space-between; padding:12px 14px 6px; font-size:20px}
+  .sheet-head button{border:0; background:none; font:inherit; font-size:20px; color:var(--ink); cursor:pointer}
+  .seg{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding:4px 14px 10px}
+  .seg button{position:relative; border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:10px; padding:7px 0; font:inherit; font-size:14px; font-weight:600; cursor:pointer}
+  .seg button.on{background:var(--pink); border-color:var(--pink-d); color:#fff}
+  .seg .n{position:absolute; top:-7px; right:-5px; background:#ff4f7e; color:#fff; border-radius:8px; font-size:10px; padding:1px 5px}
+  #boxBody{overflow:auto; padding:0 14px 18px; min-height:220px}
+  .item{width:100%; display:flex; align-items:center; gap:10px; text-align:left; border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:12px;
+        padding:10px 12px; margin-bottom:8px; font:inherit; cursor:pointer}
+  .item .ic{font-size:26px} .item .tt{flex:1; font-size:15px; font-weight:600} .item small{display:block; font-weight:400; color:var(--muted); font-size:12px}
+  .new{background:#ff4f7e; color:#fff; font-size:10px; border-radius:6px; padding:2px 6px; font-weight:700}
+  .empty{text-align:center; color:var(--muted); padding:40px 10px; font-size:15px; line-height:1.5}
+  .paper{background:#fffdf6; color:#4a2a35; border-radius:6px; padding:16px 18px 18px; box-shadow:0 3px 0 #ead9c2;
+         background-image:repeating-linear-gradient(#fffdf6 0 27px,#f3dfe4 27px 28px); border-left:4px solid #f49ab0; font-family:Caveat, cursive}
+  .paper .ld{font-family:"Pixelify Sans",monospace; font-size:12px; color:#b0808e}
+  .paper h3{font-size:28px; margin:2px 0 6px; line-height:1.1}
+  .paper .lb{font-size:22px; line-height:28px; white-space:pre-wrap}
+  .paper .sg{text-align:right; font-size:24px; margin-top:8px}
+  .prow{display:flex; gap:8px; margin-top:12px}
+  .pbtn{flex:1; border:2px solid var(--pink-d); background:var(--pink); color:#fff; border-radius:12px; padding:10px; font:inherit; font-size:15px; font-weight:600; cursor:pointer}
+  .pbtn.ghost{background:var(--bg); color:var(--ink); border-color:var(--line); flex:0 0 auto}
+  .locket{position:relative; width:100%; aspect-ratio:1; border-radius:28px; overflow:hidden; background:#000; box-shadow:0 0 0 4px #f6c34a, 0 6px 0 4px #d9a531}
+  .locket img{width:100%; height:100%; object-fit:cover; display:block}
+  .locket .cap{position:absolute; left:50%; bottom:14px; transform:translateX(-50%); background:rgba(40,30,35,.55); backdrop-filter:blur(6px); color:#fff;
+               padding:6px 14px; border-radius:20px; font-size:16px; white-space:nowrap; max-width:90%; overflow:hidden; text-overflow:ellipsis}
+  .lmeta{text-align:center; color:var(--muted); font-size:13px; margin:12px 0 8px}
+  .thumbs{display:flex; gap:8px; overflow-x:auto; padding:4px 2px}
+  .thumbs img{width:56px; height:56px; object-fit:cover; border-radius:14px; border:3px solid transparent; cursor:pointer; flex:none}
+  .thumbs img.on{border-color:#f6c34a}
 </style>
 </head>
 <body>
@@ -89,9 +129,20 @@
     <button class="btn" data-act="sleep"><b>💤</b>Sleep</button>
     <button class="btn" data-act="talk"><b>🎤</b>Talk</button>
     <button class="btn" data-act="hug"><b>💕</b>Hug</button>
+    <button class="btn" data-act="box"><b>💌</b>Love<span class="dot" id="boxDot"></span></button>
   </div>
 </div>
 
+<div id="box">
+  <div class="sheet">
+    <div class="sheet-head"><b>💌 Love Box</b><button id="boxClose" aria-label="Close">✕</button></div>
+    <div class="seg">
+      <button data-tab="letters">✉️ Letters</button><button data-tab="voice">🎧 Voice</button><button data-tab="photos">📸 Photos</button>
+    </div>
+    <div id="boxBody"></div>
+  </div>
+</div>
+<script src="content.js"></script>
 <script>
 (() => {
 'use strict';
@@ -197,10 +248,10 @@ function drawBG(){
   pa(0, 0, W, 8, '#ece0cf'); pa(0, 8, W, 1, '#ddcdb8');
   [74, 98].forEach(x => { pa(x - 4, 9, 8, 5, '#d9d9de'); pa(x - 3, 14, 6, 2, '#f4f4f8'); pa(x - 2, 10, 2, 2, '#fff'); });
   // framed photo of us
-  pa(64, 34, 44, 34, '#c9a77c'); pa(66, 36, 40, 30, '#fde5ea');
-  pa(66, 56, 40, 10, '#f6c9d4');
-  sprite(HEART, 73, 44, '#ef6b8b', 2); sprite(HEART, 89, 44, '#ef6b8b', 2);
-  pa(67, 37, 6, 1, '#fff'); pa(67, 38, 3, 1, '#fff');
+  pa(64, 26, 44, 44, '#e2b446'); pa(65, 27, 42, 42, '#f6cf68'); pa(66, 28, 40, 40, '#fde5ea');
+  pa(66, 56, 40, 12, '#f6c9d4');
+  sprite(HEART, 73, 40, '#ef6b8b', 2); sprite(HEART, 89, 40, '#ef6b8b', 2);
+  pa(84, 22, 4, 4, '#e2b446'); pa(85, 23, 2, 2, '#fde5ea');
   // shelf + tiny cherry jar
   pa(60, 88, 52, 3, '#d8bf9b'); pa(60, 91, 52, 1, '#bfa27c');
   pa(66, 78, 8, 10, '#e9f3f7'); pa(66, 78, 8, 2, '#c9d9e0'); pa(68, 82, 2, 2, '#d8344b'); pa(71, 84, 2, 2, '#d8344b');
@@ -282,6 +333,7 @@ function faceOf(c){
   if (c.listening) return ['open-eye', 'o'];
   if (c.grinT > 0 || hugT > 0 || (game && chars[sel] === c)) return ['arc', 'grin'];
   if (bath && bath.c === c) return ['arc', 'grin'];
+  if ((reading || voicePlaying) && c === chars[0]) return ['arc', 'smile'];
   const m = mood(c);
   if (m < 30) return ['sad', 'frown'];
   return [c.blink > 0 ? 'blink' : 'open-eye', m > 70 ? 'grin' : 'smile'];
@@ -440,18 +492,18 @@ function drawParticles(dt){
 // ---------- UI ----------
 const $ = id => document.getElementById(id);
 let bubbles = new Map();
-function say(c, text, ms = 2600){
+function say(c, text, ms = 2600, long = false){
   text = text.replace('{o}', other(c).name);
   let b = bubbles.get(c);
   if (b) { b.el.remove(); clearTimeout(b.tm); }
-  const el = document.createElement('div'); el.className = 'bubble'; el.textContent = text; wrap.appendChild(el);
+  const el = document.createElement('div'); el.className = 'bubble' + (long ? ' long' + (c === chars[1] ? ' center' : '') : ''); el.textContent = text; wrap.appendChild(el);
   const tm = setTimeout(() => { el.remove(); bubbles.delete(c); }, ms);
-  bubbles.set(c, { el, tm });
+  bubbles.set(c, { el, tm, long });
   placeBubbles();
 }
 function placeBubbles(){
   bubbles.forEach((b, c) => {
-    const x = Math.max(40, Math.min(140, c.cx)), y = GROUND - c.h + c.jy - 6;
+    const x = b.long ? 90 : Math.max(40, Math.min(140, c.cx)), y = GROUND - c.h + c.jy - 6;
     b.el.style.left = (x / W * 100) + '%'; b.el.style.top = (y / H * 100) + '%';
   });
 }
@@ -484,7 +536,7 @@ function renderStats(){
 function setOn(act, on){ document.querySelector(`[data-act="${act}"]`).classList.toggle('on', on); }
 
 // ---------- actions ----------
-function busy(){ return game || bath || sleeping; }
+function busy(){ return game || bath || sleeping || reading || voicePlaying; }
 const FOOD = { '🍒':[18,'cherries!! 🍒'], '🍓':[14,'so sweet~'], '🍜':[30,'ramen time!'], '🧋':[16,'boba >>>'], '🍰':[22,'cake is life'], '🍙':[24,'nom nom'] };
 const actions = {
   feed(){
@@ -516,6 +568,7 @@ const actions = {
     else { chars.forEach(c => { c.grinT = 1.5; c.jy = -1; c.vy = -60; }); say(chars[0], 'good morning! ☀️'); boop(520, .25, 'sine', .05, 2); }
   },
   talk(){ talk(); },
+  box(){ $('tray').classList.remove('show'); setOn('feed', false); openBox(); },
   hug(){
     if (busy()) return toast('not right now!');
     hugT = 2.6; love = clamp(love + 8);
@@ -549,7 +602,7 @@ function endBath(){
 // ---------- talk (record + squeaky playback) ----------
 let rec = null, recTimer = null, analyser = null;
 async function talk(){
-  if (sleeping || game || bath) return toast('not right now!');
+  if (sleeping || game || bath || reading || voicePlaying) return toast('not right now!');
   const c = chars[sel];
   if (rec){ rec.stop(); return; }
   if (!navigator.mediaDevices || !window.MediaRecorder){ say(c, 'i can\'t hear you 🥺'); return; }
@@ -595,6 +648,8 @@ cv.addEventListener('pointerdown', e => {
   const [x, y] = toLogical(e);
   $('tray').classList.remove('show'); setOn('feed', false);
   if (game){ game.x = x; return; }
+  if (reading || voicePlaying){ stopMessages(); return; }
+  if (!bath && !sleeping && x >= 64 && x <= 108 && y >= 22 && y <= 70){ boop(990, .08, 'sine', .05, 1.3); openBox('photos'); return; }
   const c = hit(x, y); if (!c) return;
   if (bath){ scrub(x, y); return; }
   const i = chars.indexOf(c); if (i !== sel){ sel = i; renderTabs(); }
@@ -639,7 +694,7 @@ function frame(now){
     c.vy += 400 * dt; c.jy = Math.min(0, c.jy + c.vy * dt); if (c.jy === 0) c.vy = 0;
     c.grinT -= dt; c.eatT -= dt; c.wave -= dt;
     c.nextBlink -= dt; if (c.nextBlink < 0){ c.blink = .12; c.nextBlink = 2 + Math.random() * 4; } c.blink -= dt;
-    if (c.talking) c.mouthAmp = micLevel();
+    if (c.talking) c.mouthAmp = c.fake ? (c.fake() ? (Math.sin(t * 17) + 1) * .4 + .1 : 0) : micLevel();
     let target = c.homeX;
     if (hugT > 0) target = c === chars[0] ? 77 : 103;
     if (game && c === chars[sel]) target = Math.max(28, Math.min(152, game.x));
@@ -709,6 +764,20 @@ function frame(now){
     ctx.fillStyle = on ? '#ffe7a0' : '#efd9a8'; ctx.fillRect(x, y, 1, 1);
     if (on){ ctx.fillStyle = 'rgba(255,220,120,.35)'; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3); }
   }
+  // locket photo in the wall frame
+  if (framePhoto && framePhoto.complete && framePhoto.naturalWidth){
+    const iw = framePhoto.naturalWidth, ih = framePhoto.naturalHeight, s = Math.min(iw, ih);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(framePhoto, (iw - s) / 2, (ih - s) / 2, s, s, 66, 28, 40, 40);
+  }
+  if (totalUnread() > 0){
+    P = ctx; const ey = Math.round(18 + Math.sin(t * 4) * 2);
+    pa(99, ey, 12, 8, '#4a2a35'); pa(100, ey + 1, 10, 6, '#fff'); pa(101, ey + 1, 1, 1, '#e7d3da'); pa(108, ey + 1, 1, 1, '#e7d3da');
+    pa(102, ey + 2, 2, 1, '#e7d3da'); pa(106, ey + 2, 2, 1, '#e7d3da'); pa(104, ey + 3, 2, 1, '#e7d3da');
+    sprite(HEART_S, 103.5, ey + 3, '#ff4f7e');
+    if (Math.sin(t * 6) > .6) spawn('spark', 100 + Math.random() * 14, ey - 2, { vx: 0, vy: -6, life: .5, max: .5 });
+  }
+
   // shadows
   chars.forEach(c => {
     const s = 1 + c.jy / 80;
@@ -756,8 +825,154 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-load(); drawBG(); renderTabs(); renderStats();
-window.__pet = { chars, say, actions, get sel(){ return sel; }, set sel(v){ sel = v; renderTabs(); } };
+// ---------- love box (letters, voice notes, locket photos) ----------
+const LOVE = window.LOVE || {};
+['letters', 'voice', 'photos'].forEach(k => { LOVE[k] = (LOVE[k] || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))); });
+const ikey = (k, it) => k + '|' + (it.date || '') + '|' + (it.title || it.caption || '') + '|' + (it.src || '');
+let seen = new Set();
+try { seen = new Set(JSON.parse(localStorage.getItem('riri-seen') || '[]')); } catch(e){}
+function markSeen(k, it){ seen.add(ikey(k, it)); try { localStorage.setItem('riri-seen', JSON.stringify([...seen])); } catch(e){} updateBadge(); }
+const unreadOf = k => LOVE[k].filter(it => !seen.has(ikey(k, it))).length;
+const totalUnread = () => unreadOf('letters') + unreadOf('voice') + unreadOf('photos');
+function updateBadge(){
+  const n = totalUnread(), d = $('boxDot'); d.textContent = n; d.style.display = n ? 'block' : 'none';
+  document.querySelectorAll('.seg button').forEach(b => {
+    const u = unreadOf(b.dataset.tab); b.querySelector('.n')?.remove();
+    if (u) b.insertAdjacentHTML('beforeend', `<span class="n">${u}</span>`);
+  });
+}
+let framePhoto = null;
+if (LOVE.photos[0]){ framePhoto = new Image(); framePhoto.src = LOVE.photos[0].src; }
+const fmtDate = d => { if (!d) return ''; const x = new Date(d + 'T12:00:00'); return isNaN(x) ? d : x.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
+let boxTab = 'letters';
+function openBox(tab){
+  if (game || bath || sleeping) return toast('not right now!');
+  if (!tab) tab = ['letters', 'voice', 'photos'].find(k => unreadOf(k)) || boxTab;
+  $('box').classList.add('show'); showTab(tab);
+}
+function closeBox(){ $('box').classList.remove('show'); }
+$('boxClose').onclick = closeBox;
+$('box').onclick = e => { if (e.target.id === 'box') closeBox(); };
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { boop(880, .05); showTab(b.dataset.tab); });
+function showTab(tab, idx){
+  boxTab = tab;
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const body = $('boxBody'), list = LOVE[tab], from = chars[1].name;
+  body.innerHTML = '';
+  if (!list.length){
+    body.innerHTML = `<div class="empty">${{ letters:'no letters yet… 💭', voice:'no voice notes yet… 🥺<br>they\'ll show up here', photos:'no photos yet 📸' }[tab]}</div>`;
+    return;
+  }
+  if (tab === 'photos'){
+    const i = idx || 0, ph = list[i];
+    body.innerHTML = `<div class="locket"><img alt=""><div class="cap"></div></div><div class="lmeta"></div><div class="thumbs"></div>`;
+    body.querySelector('.locket img').src = ph.src;
+    const cap = body.querySelector('.cap'); if (ph.caption) cap.textContent = ph.caption; else cap.remove();
+    body.querySelector('.lmeta').textContent = `from ${ph.from || from} · ${fmtDate(ph.date)}`;
+    const th = body.querySelector('.thumbs');
+    if (list.length > 1) list.forEach((p2, j) => {
+      const im = document.createElement('img'); im.src = p2.src; im.alt = ''; if (j === i) im.className = 'on';
+      im.onclick = () => showTab('photos', j); th.appendChild(im);
+    }); else th.remove();
+    markSeen('photos', ph);
+    return;
+  }
+  list.forEach((it, j) => {
+    const b = document.createElement('button'); b.className = 'item';
+    const isNew = !seen.has(ikey(tab, it));
+    b.innerHTML = `<span class="ic">${tab === 'letters' ? (isNew ? '💌' : '✉️') : '🎧'}</span><span class="tt"></span>${isNew ? '<span class="new">NEW</span>' : ''}<span>${tab === 'voice' ? '▶' : '›'}</span>`;
+    const tt = b.querySelector('.tt'); tt.textContent = it.title || (tab === 'letters' ? 'a letter' : 'voice note');
+    tt.insertAdjacentHTML('beforeend', `<small>from ${esc(it.from || from)} · ${esc(fmtDate(it.date))}</small>`);
+    b.onclick = () => { boop(760, .06); tab === 'letters' ? showLetter(it) : (closeBox(), markSeen('voice', it), playVoice(it)); };
+    body.appendChild(b);
+  });
+}
+function showLetter(l){
+  markSeen('letters', l);
+  const body = $('boxBody');
+  body.innerHTML = `<div class="paper"><div class="ld"></div><h3></h3><div class="lb"></div><div class="sg"></div></div>
+    <div class="prow"><button class="pbtn ghost" id="lBack">← back</button><button class="pbtn" id="lRead">🔊 have ${esc(chars[1].name)} read it to me</button></div>`;
+  body.querySelector('.ld').textContent = fmtDate(l.date);
+  body.querySelector('h3').textContent = l.title || '';
+  body.querySelector('.lb').textContent = l.body || '';
+  body.querySelector('.sg').textContent = '— ' + (l.from || chars[1].name) + ' 💕';
+  body.scrollTop = 0;
+  $('lBack').onclick = () => showTab('letters');
+  $('lRead').onclick = () => { closeBox(); readLetter(l); };
+}
+
+let reading = null, voicePlaying = null;
+function readLetter(l){
+  stopMessages();
+  const me = chars[1], her = chars[0];
+  const parts = (l.body || '').split(/\n+|(?<=[.!?…])\s+/).map(x => x.trim()).filter(Boolean);
+  const sp = window.speechSynthesis;
+  reading = { i: 0, speaking: false };
+  const r = reading;
+  me.talking = true; me.fake = () => r.speaking;
+  toast('tap anywhere to stop', 1800);
+  const next = () => {
+    if (reading !== r) return;
+    if (r.i >= parts.length){ finishMessage('i love you too 🥺💕'); return; }
+    const line = parts[r.i++];
+    say(me, line, 60000, true);
+    if (Math.random() < .5) hearts(her, 2);
+    if (sp && window.SpeechSynthesisUtterance){
+      const u = new SpeechSynthesisUtterance(line.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, ''));
+      u.rate = .95; u.pitch = 1.05;
+      let started = false, done = false;
+      const fin = () => { if (done) return; done = true; r.speaking = false; setTimeout(next, 350); };
+      u.onstart = () => { started = true; r.speaking = true; };
+      const timed = () => { if (done) return; r.speaking = true; setTimeout(fin, 700 + line.length * 55); };
+      u.onend = fin;
+      u.onerror = () => started ? fin() : timed();
+      sp.speak(u);
+      // no voice available? fall back to timed subtitles
+      setTimeout(() => { if (!started && !done && !r.speaking && reading === r) timed(); }, 1200);
+    } else {
+      r.speaking = true;
+      setTimeout(() => { r.speaking = false; setTimeout(next, 300); }, 900 + line.length * 55);
+    }
+  };
+  if (sp) sp.cancel();
+  next();
+}
+function playVoice(v){
+  stopMessages();
+  const me = chars[1];
+  const audio = new Audio(v.src);
+  voicePlaying = audio;
+  try {
+    const a = ac(), srcNode = a.createMediaElementSource(audio);
+    analyser = a.createAnalyser(); analyser.fftSize = 256;
+    srcNode.connect(analyser); analyser.connect(a.destination);
+    me.fake = null;
+  } catch(e){ me.fake = () => !audio.paused; }
+  me.talking = true;
+  say(me, '🎧 ' + (v.title || 'voice note'), 600000, true);
+  audio.onended = () => finishMessage('aww 🥺💕');
+  audio.onerror = () => { stopMessages(); say(me, 'oops, that one won\'t play 😭'); };
+  audio.play().catch(() => { stopMessages(); say(me, 'tap again to play 🎧'); });
+  toast('tap anywhere to stop', 1800);
+}
+function stopMessages(){
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (voicePlaying){ voicePlaying.pause(); }
+  reading = null; voicePlaying = null; analyser = null;
+  const me = chars[1]; me.talking = false; me.fake = null;
+  const b = bubbles.get(me); if (b){ b.el.remove(); clearTimeout(b.tm); bubbles.delete(me); }
+}
+function finishMessage(line){
+  stopMessages();
+  const her = chars[0];
+  her.grinT = 2.5; her.vy = -70; her.jy = -1; hearts(her, 8); love = clamp(love + 5);
+  say(her, line, 3000); chars[1].grinT = 2.5;
+  boop(660, .1, 'sine', .06, 1.5); setTimeout(() => boop(990, .2, 'sine', .06, 1.5), 150);
+}
+if (totalUnread()) setTimeout(() => toast('💌 you have something new!', 3000), 900);
+
+load(); drawBG(); renderTabs(); renderStats(); updateBadge();
+window.__pet = { chars, say, actions, openBox, showTab, readLetter, get sel(){ return sel; }, set sel(v){ sel = v; renderTabs(); } };
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 })();
