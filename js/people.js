@@ -170,15 +170,24 @@ function meHead(o){
 }
 
 // ---------- thumbs up (the pose from your picture) ----------
+// fist with curled fingers + a thumb on the side nearest the body (so it reads as 👍)
+function fist(fx, fy, inner, S, SD){
+  p(fx, fy, 7, 6, S);                                       // fist
+  const tx = inner > 0 ? fx + 4 : fx;                        // thumb sits on the inner edge
+  p(tx, fy - 4, 3, 4, S); p(tx + (inner > 0 ? 0 : 1), fy - 5, 2, 1, S);
+  p(tx + (inner > 0 ? -1 : 3), fy - 1, 1, 2, SD);            // crease between thumb and fingers
+  const cx = inner > 0 ? fx : fx + 2;
+  for (let k = 0; k < 3; k++) p(cx, fy + 1 + k * 2, 5, 1, SD); // curled fingers
+}
 function ririThumb(side, w){
   const { S, SD } = RIRI.col;
-  if (side < 0){ p(10, 48, 4, 13, S); p(6, 57, 8, 5, S); p(6, 46 + w, 4, 14 - w, S); p(4, 42 + w, 7, 6, S); p(6, 38 + w, 2, 4, S); p(5, 44 + w, 1, 3, SD); return [OX + 7, OY + 44 + w]; }
-  p(38, 48, 4, 13, S); p(38, 57, 8, 5, S); p(42, 46 + w, 4, 14 - w, S); p(41, 42 + w, 7, 6, S); p(44, 38 + w, 2, 4, S); p(46, 44 + w, 1, 3, SD); return [OX + 44, OY + 44 + w];
+  if (side < 0){ p(10, 48, 4, 13, S); p(6, 57, 8, 5, S); p(6, 47 + w, 4, 13 - w, S); fist(4, 42 + w, 1, S, SD); return [OX + 7, OY + 44 + w]; }
+  p(38, 48, 4, 13, S); p(38, 57, 8, 5, S); p(42, 47 + w, 4, 13 - w, S); fist(41, 42 + w, -1, S, SD); return [OX + 44, OY + 44 + w];
 }
 function meThumb(side, w){
   const { S, SD } = ME.col;
-  if (side > 0){ p(45, 50, 5, 15, S); p(45, 61, 10, 5, S); p(50, 46 + w, 5, 18 - w, S); p(49, 40 + w, 7, 7, S); p(51, 36 + w, 2, 4, S); p(55, 42 + w, 1, 4, SD); p(50, 56 + w, 5, 2, '#e0b84a'); return [OX + 52, OY + 43 + w]; }
-  p(8, 50, 5, 15, S); p(3, 61, 10, 5, S); p(3, 46 + w, 5, 18 - w, S); p(2, 40 + w, 7, 7, S); p(5, 36 + w, 2, 4, S); p(2, 42 + w, 1, 4, SD); return [OX + 5, OY + 43 + w];
+  if (side > 0){ p(45, 50, 5, 15, S); p(45, 61, 10, 5, S); p(50, 47 + w, 5, 17 - w, S); fist(49, 41 + w, -1, S, SD); p(50, 56 + w, 5, 2, '#e0b84a'); return [OX + 52, OY + 43 + w]; }
+  p(8, 50, 5, 15, S); p(3, 61, 10, 5, S); p(3, 47 + w, 5, 17 - w, S); fist(2, 41 + w, 1, S, SD); return [OX + 5, OY + 43 + w];
 }
 
 // ---------- public: draw a person in parts ----------

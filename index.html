@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Riri &amp; Me</title>
+<link rel="icon" type="image/png" href="icons/icon-128.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f49ab0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Riri &amp; Me">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -29,6 +37,13 @@
   .love{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600}
   .love .bar{width:84px}
   .tabs{display:flex; gap:6px}
+  .roombar{display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
+  .roombar button{border:2px solid var(--line); background:var(--panel); border-radius:10px; font-size:17px; padding:3px 0; cursor:pointer; line-height:1.2}
+  .roombar button.on{background:#ffe9a8; border-color:#e8b744; box-shadow:0 2px 0 #e8b744}
+  .fgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .fgrid button{aspect-ratio:1; border-radius:12px; border:3px solid var(--line); padding:0; overflow:hidden; cursor:pointer; background:var(--bg); font:inherit; font-size:12px; color:var(--ink)}
+  .fgrid button.on{border-color:#f6c34a}
+  .fgrid img{width:100%; height:100%; object-fit:cover; display:block}
   .tab{flex:1; border:2px solid var(--line); background:var(--panel); color:var(--ink); border-radius:10px;
        padding:6px 8px; font:inherit; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px}
   .tab.on{border-color:var(--pink-d); background:var(--pink); color:#fff}
@@ -187,6 +202,7 @@
     <div class="stat"><span class="ic">⚡</span><div class="bar"><i id="s-energy" style="background-color:var(--energy)"></i></div></div>
     <div class="stat"><span class="ic">🫧</span><div class="bar"><i id="s-clean" style="background-color:var(--clean)"></i></div></div>
   </div>
+  <div class="roombar" id="roomBar"></div>
   <div id="stage">
     <div id="wrap">
       <canvas id="bgc" width="180" height="260"></canvas>
@@ -225,6 +241,12 @@
     <div class="body" id="camBody"></div>
   </div>
 </div>
+<div class="modal" id="frameM">
+  <div class="sheet">
+    <div class="sheet-head"><b id="frameTitle">🖼️ choose a photo</b><button class="x" data-close="frameM" aria-label="Close">✕</button></div>
+    <div class="body" id="frameBody"></div>
+  </div>
+</div>
 <div class="modal" id="syncM">
   <div class="sheet">
     <div class="sheet-head"><b>🔗 Sync our phones</b><button class="x" data-close="syncM" aria-label="Close">✕</button></div>
@@ -255,6 +277,7 @@
 <script src="sync-config.js"></script>
 <script src="content.js"></script>
 <script src="js/people.js"></script>
+<script src="js/rooms.js"></script>
 <script src="js/games.js"></script>
 <script>
 (() => {
@@ -374,7 +397,85 @@ function drawDog(q, t){
   });
 }
 pets[0].draw = drawCat; pets[1].draw = drawDog;
-const petBox = q => ({ x: q.cx - q.w / 2, y: (q.gy || GROUND) - q.h + q.jy, w: q.w, h: q.h });
+Object.assign(pets[0], { pitch: 1.9, home: 56, napX: 26, napY: 187, bowlX: 77, toy: '🧶', s: 1, stats: { hunger: 80, fun: 80, energy: 85, clean: 90 } });
+Object.assign(pets[1], { pitch: 1.15, home: 126, napX: 140, napY: 242, bowlX: 104, toy: '🎾', s: 1, stats: { hunger: 80, fun: 80, energy: 85, clean: 90 } });
+pets.forEach(q => Object.assign(q, { tcx: q.cx, gy: GROUND, bowl: null, eatT: 0, walking: false, talking: false, listening: false, mouthAmp: 0, fake: null }));
+const petBox = q => ({ x: q.cx - q.w * q.s / 2, y: (q.gy || GROUND) - q.h * q.s + q.jy, w: q.w * q.s, h: q.h * q.s });
+let petSel = 0, petNap = false, petBath = null, toy = null;
+const PET_FOODS = {
+  cat: [{ e:'🐟', name:'fish', v:22, line:'nyam nyam 🐟' }, { e:'🥫', name:'tuna', v:26, line:'tuna!! *purrs*' }, { e:'🥛', name:'milk', v:12, line:'*lap lap* 🥛' }, { e:'🍗', name:'chicken', v:20, line:'mrrrp! 🍗' }],
+  dog: [{ e:'🦴', name:'bone', v:16, line:'*crunch crunch* 🦴' }, { e:'🍖', name:'meat', v:28, line:'WOOF! 🍖' }, { e:'🥕', name:'carrot', v:10, line:'crunchy! 🥕' }, { e:'🍗', name:'chicken', v:22, line:'best day ever 🐾' }],
+};
+const inPets = () => room === 'pets';
+const petMood = q => (q.stats.hunger + q.stats.fun + q.stats.energy + q.stats.clean) / 4;
+function petLow(q){ const s = q.stats, k = Object.keys(s).reduce((a, b) => s[a] < s[b] ? a : b);
+  return q.id === 'cat' ? { hunger:'meow… hungry 🐟', fun:'play with me? 🧶', energy:'*yawns*', clean:'i need a bath… mrrp' }[k] : { hunger:'woof… food? 🦴', fun:'ball?? play?? 🎾', energy:'*sleepy woof*', clean:'i\'m a muddy pup 🫧' }[k]; }
+function updatePets(dt, sc){
+  pets.forEach((q, i) => {
+    let tx, gy = GROUND;
+    if (inPets()){
+      q.s = 2; gy = 246; tx = q.home;
+      if (petNap){ tx = q.napX; gy = q.napY; }
+      else if (q.bowl) tx = q.bowlX;
+      else if (toy && toy.pet === q) tx = toy.caught ? q.home : toy.x;
+    } else {
+      q.s = 1;
+      tx = i === 0 ? (sc === 'sleep' ? 136 : 17) : (sc === 'sleep' ? 165 : 162);
+      gy = i === 0 && sc === 'sleep' ? 230 : GROUND;
+    }
+    const dx = tx - q.cx; q.walking = Math.abs(dx) > 1;
+    q.cx += Math.sign(dx) * Math.min(Math.abs(dx), (inPets() ? 50 : 40) * dt);
+    q.gy += (gy - q.gy) * Math.min(1, dt * 8);
+    q.sleepy = sleeping || (inPets() && petNap);
+    q.vy += 400 * dt; q.jy = Math.min(0, q.jy + q.vy * dt); if (q.jy === 0) q.vy = 0;
+    if (q.walking && q.jy === 0 && Math.random() < dt * 6){ q.vy = -25; q.jy = -.5; }
+    q.happyT -= dt; q.nb -= dt; if (q.nb < 0){ q.blink = .14; q.nb = 2 + Math.random() * 4; } q.blink -= dt;
+    if (q.talking){ q.mouthAmp = q.fake ? 0 : micLevel(); if (q.mouthAmp > .1 && q.jy === 0){ q.vy = -40 * q.mouthAmp; q.jy = -.5; } }
+    // eating from the bowl
+    if (q.bowl && !q.walking){
+      q.eatT += dt; if (q.jy === 0 && Math.sin(q.eatT * 14) > .9){ q.vy = -20; q.jy = -.5; }
+      if (q.eatT > 2){ const fd = q.bowl; q.bowl = null; q.eatT = 0; q.stats.hunger = clamp(q.stats.hunger + fd.v); q.happyT = 2; say(q, fd.line, 2200); hearts(q.cx, petBox(q).y, 4); boop(q.snd[0], .12, 'sine', .05, q.snd[1]); save(); }
+    }
+    if (petNap && inPets()) q.stats.energy = clamp(q.stats.energy + dt * 1.2);
+    if (!sleeping && !busy() && !q.bowl && !toy && Math.random() < dt * .04){ q.vy = -40; q.jy = -1; }
+  });
+  // toy physics (ball / yarn)
+  if (toy){
+    if (!toy.caught){
+      toy.vy += 300 * dt; toy.x += toy.vx * dt; toy.y += toy.vy * dt;
+      if (toy.y > 244){ toy.y = 244; toy.vy *= -.45; toy.vx *= .7; }
+      if (toy.x < 8 || toy.x > 172){ toy.vx *= -1; toy.x = Math.max(8, Math.min(172, toy.x)); }
+      const q = toy.pet;
+      if (Math.abs(q.cx - toy.x) < 10 && toy.y > 225){ toy.caught = true; q.happyT = 2; q.vy = -70; q.jy = -1; q.stats.fun = clamp(q.stats.fun + 15); q.stats.energy = clamp(q.stats.energy - 4); boop(q.snd[0], .12, 'square', .05, q.snd[1]); say(q, q.id === 'cat' ? 'got it!! 🧶' : 'fetch!! 🎾', 1800); hearts(q.cx, petBox(q).y, 3); }
+    } else { toy.x = toy.pet.cx + (toy.pet.id === 'dog' ? 14 : 12); toy.y = petBox(toy.pet).y + 30; toy.t = (toy.t || 0) + dt; if (toy.t > 2.2 || (!toy.pet.walking && toy.t > 1)){ toy = null; setOn('play', false); save(); } }
+  }
+  if (petBath && petBath.rinse){ petBath.rinse -= dt; const b = petBox(petBath.q); for (let i = 0; i < 3; i++) spawn('drop', b.x + Math.random() * b.w, b.y - 10, { vx: 0, vy: 140, life: .7, max: .7 }); if (petBath.rinse <= 0){ petBath = null; setOn('bath', false); save(); } }
+}
+const petActions = {
+  feed(){ renderTray(); $('tray').classList.toggle('show'); setOn('feed', $('tray').classList.contains('show')); },
+  play(){
+    const q = pets[petSel]; if (petNap) return toast('shh… napping 💤');
+    if (toy) return; toy = { pet: q, x: 90, y: 150, vx: (q.cx < 90 ? -1 : 1) * (60 + Math.random() * 50), vy: -120, e: q.toy }; setOn('play', true);
+    boop(500, .1, 'triangle', .05, 1.5); say(q, q.id === 'cat' ? '!!! 👀' : 'BALL!! 🎾', 1400);
+  },
+  bath(){ if (petNap) return; if (petBath){ petBath = null; setOn('bath', false); return; } petBath = { q: pets[petSel], rinse: 0 }; setOn('bath', true); toast('rub ' + pets[petSel].name + ' to wash! 🧼', 2500); },
+  sleep(){ petNap = !petNap; setOn('sleep', petNap); toast(petNap ? 'nap time 💤' : 'wakey wakey ☀️'); if (!petNap) pets.forEach(q => { q.happyT = 1.5; q.vy = -60; q.jy = -1; }); },
+  hug(){
+    const q = pets[petSel], o = pets[1 - petSel];
+    q.happyT = 2.5; q.vy = -70; q.jy = -1; q.stats.fun = clamp(q.stats.fun + 8); love = clamp(love + 2);
+    for (let k = 0; k < 3; k++) setTimeout(() => hearts(q.cx, petBox(q).y, 5), k * 300);
+    say(q, q.id === 'cat' ? '*purrrrrr* 💕' : '*happy wiggles* 💛', 2000);
+    setTimeout(() => { o.vy = -60; o.jy = -1; say(o, o.id === 'cat' ? 'me too?! 🥺' : 'me too!! 🐾', 1600); }, 900);
+    boop(q.snd[0], .15, 'sine', .05, q.snd[1]); save();
+  },
+};
+function petScrub(x, y){
+  const q = petBath.q, b = petBox(q);
+  if (x < b.x - 4 || x > b.x + b.w + 4 || y < b.y - 4 || y > b.y + b.h + 4 || petBath.rinse) return;
+  q.stats.clean = clamp(q.stats.clean + .9);
+  if (Math.random() < .6) spawn('bubble', x + (Math.random() - .5) * 10, y + (Math.random() - .5) * 10, { vx: (Math.random() - .5) * 4, vy: -2 - Math.random() * 4, life: 3, max: 3, r: 1 + Math.floor(Math.random() * 3) });
+  if (q.stats.clean >= 100){ petBath.rinse = 1.4; q.happyT = 2; say(q, q.id === 'cat' ? 'so fluffy now ✨' : 'shake shake! ✨', 1800); }
+}
 
 // ---------- state ----------
 let sel = 0, love = 80, sleeping = false, hugT = 0, hugKiss = false, t = 0;
@@ -383,16 +484,17 @@ let particles = [], flying = [], bath = null, game = null, reading = null, voice
 let pushTimer = null, stateTs = 0;
 function pushState(){
   clearTimeout(pushTimer); pushTimer = null;
-  if (synced()) window.Sync.saveState({ chars: chars.map(c => ({ name: c.name, stats: c.stats })), love, ts: stateTs, by: deviceId }).catch(() => {});
+  if (synced()) window.Sync.saveState({ chars: chars.map(c => ({ name: c.name, stats: c.stats })), pets: pets.map(q => ({ name: q.name, stats: q.stats })), frames: frameAssign, love, ts: stateTs, by: deviceId }).catch(() => {});
 }
 function save(action = true){
   if (action){ stateTs = Date.now(); if (!pushTimer) pushTimer = setTimeout(pushState, 2500); }
-  store('riri-pet', { chars: chars.map(c => ({ name:c.name, stats:c.stats })), love, ts: Date.now(), actionTs: stateTs });
+  store('riri-pet', { chars: chars.map(c => ({ name:c.name, stats:c.stats })), pets: pets.map(q => ({ name: q.name, stats: q.stats })), love, ts: Date.now(), actionTs: stateTs });
 }
 function load(){
   const d = fetchStore('riri-pet', null); if (!d) return;
   (d.chars || []).forEach((s, i) => { if (chars[i]){ chars[i].name = s.name || chars[i].name; Object.assign(chars[i].stats, s.stats); } });
   love = d.love ?? love; stateTs = d.actionTs || 0;
+  (d.pets || []).forEach((s, i) => { if (pets[i]){ pets[i].name = s.name || pets[i].name; Object.assign(pets[i].stats, s.stats || {}); } });
   decay(Math.min((Date.now() - (d.ts || Date.now())) / 1000, 12 * 3600) * .5);
 }
 function decay(dt){
@@ -402,6 +504,7 @@ function decay(dt){
     s.energy = clamp(sleeping ? s.energy + dt * .8 : s.energy - dt / 90);
   });
   love = clamp(love - dt / 200);
+  if (typeof pets !== 'undefined') pets.forEach(q => { const s = q.stats; if (!s) return; s.hunger = clamp(s.hunger - dt / 80); s.fun = clamp(s.fun - dt / 60); s.clean = clamp(s.clean - dt / 150); if (!(petNap || sleeping)) s.energy = clamp(s.energy - dt / 120); });
 }
 const mood = c => (c.stats.hunger + c.stats.fun + c.stats.energy + c.stats.clean) / 4;
 const other = c => chars[1 - chars.indexOf(c)];
@@ -420,32 +523,72 @@ function boop(f = 660, d = .08, type = 'square', vol = .05, slide = 0){
 }
 
 // ---------- background (clean white, like your picture) ----------
-let framePhoto = null;
-function drawBG(){
-  P = bctx;
-  const g = bctx.createRadialGradient(W, 0, 10, W, 0, 210);
-  g.addColorStop(0, '#e9e9ec'); g.addColorStop(.55, '#f8f8f9'); g.addColorStop(1, '#ffffff');
-  bctx.fillStyle = g; bctx.fillRect(0, 0, W, H);
-  // soft floor shadows
-  const ell = (cx, cy, rx, ry, c) => { for (let y = -ry; y <= ry; y++){ const w = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry))); pa(cx - w, cy + y, w * 2, 1, c); } };
-  ell(90, GROUND, 70, 5, 'rgba(120,100,110,.07)');
-  ell(90, GROUND, 52, 3, 'rgba(120,100,110,.07)');
-  ell(17, GROUND, 12, 2, 'rgba(120,100,110,.12)'); ell(162, GROUND + 1, 15, 2, 'rgba(120,100,110,.12)');
-  // locket polaroid (latest photo) top-left
-  pa(7, 10, 42, 50, 'rgba(74,42,53,.12)');
-  pa(5, 8, 42, 50, '#4a2a35'); pa(6, 9, 40, 48, '#fff');
-  pa(9, 12, 34, 34, '#f6dbe2');
-  if (framePhoto && framePhoto.complete && framePhoto.naturalWidth){
-    const iw = framePhoto.naturalWidth, ih = framePhoto.naturalHeight, s = Math.min(iw, ih);
-    bctx.imageSmoothingEnabled = true;
-    bctx.drawImage(framePhoto, (iw - s) / 2, (ih - s) / 2, s, s, 9, 12, 34, 34);
-  } else { sprite(HEART, 19, 25, '#ef6b8b', 2); }
-  pa(14, 50, 24, 1, '#e7d3da'); pa(18, 53, 16, 1, '#e7d3da');
-  pa(20, 5, 12, 5, 'rgba(246,195,74,.75)');      // washi tape
+let room = fetchStore('riri-room-now', 'yard');
+let frameAssign = fetchStore('riri-frames', {});
+const imgCache = new Map();
+function imgFor(src){
+  if (!src) return null;
+  let im = imgCache.get(src);
+  if (!im){ im = new Image(); im.onload = () => drawBG(); im.src = src; imgCache.set(src, im); }
+  return im;
 }
-function setFramePhoto(src){
-  if (!src){ framePhoto = null; drawBG(); return; }
-  const im = new Image(); im.onload = drawBG; im.src = src; framePhoto = im; drawBG();
+const photoRef = ph => ph.id || ph.src;
+function photoForFrame(fid){
+  const all = lists.photos(), ref = frameAssign[fid];
+  const ph = (ref && all.find(p => photoRef(p) === ref)) || all[0];
+  return ph ? imgFor(ph.src) : null;
+}
+const isNight = () => { const h = new Date().getHours(); return sleeping || h >= 19 || h < 6; };
+function drawBG(){
+  Rooms.draw(bctx, room, { night: isNight(), photo: photoForFrame, awake: !sleeping && !(bath && room === 'bathroom') });
+}
+function setRoom(id){
+  if (room === id) return;
+  room = id; store('riri-room-now', room);
+  bubbles.forEach(b => b.el.remove()); bubbles.clear();
+  $('tray').classList.remove('show'); setOn('feed', false);
+  drawBG(); renderRooms(); renderTabs(); renderStats();
+  boop(760, .06, 'sine', .04, 1.3);
+}
+function renderRooms(){
+  const bar = $('roomBar'); bar.innerHTML = '';
+  Rooms.ROOMS.forEach(rm => {
+    const b = document.createElement('button'); b.textContent = rm.icon; b.title = rm.name; b.className = rm.id === room ? 'on' : '';
+    b.onclick = () => { if (busy() && rm.id !== room) return toast('not right now!'); setRoom(rm.id); };
+    bar.appendChild(b);
+  });
+}
+setInterval(drawBG, 60000);
+// frame picker: choose which photo goes in a frame
+function openFramePicker(fid, presetRef){
+  const f = Object.values(Rooms.FRAMES).flat().find(x => x.id === fid);
+  if (presetRef){ frameAssign[fid] = presetRef; store('riri-frames', frameAssign); drawBG(); save(); toast('put in the ' + (f ? f.label : 'frame') + ' 🖼️'); return; }
+  openModal('frameM'); $('frameTitle').textContent = '🖼️ ' + (f ? f.label : 'frame');
+  const body = $('frameBody'), all = lists.photos();
+  body.innerHTML = `<div class="fgrid"></div><div class="hint">tap a photo to put it in this frame. "newest" always shows the latest photo.</div>`;
+  const grid = body.querySelector('.fgrid');
+  const auto = document.createElement('button'); auto.innerHTML = '✨<br>newest'; if (!frameAssign[fid]) auto.className = 'on';
+  auto.onclick = () => { delete frameAssign[fid]; store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); };
+  grid.appendChild(auto);
+  all.forEach(ph => {
+    const b = document.createElement('button'); if (frameAssign[fid] === photoRef(ph)) b.className = 'on';
+    const im = document.createElement('img'); im.src = ph.src; im.alt = ''; b.appendChild(im);
+    b.onclick = () => { frameAssign[fid] = photoRef(ph); store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); boop(880, .08, 'sine', .05, 1.4); };
+    grid.appendChild(b);
+  });
+  const cam = document.createElement('button'); cam.innerHTML = '📷<br>new'; cam.onclick = () => { closeModal('frameM'); openCam(); }; grid.appendChild(cam);
+}
+function chooseFrameFor(ph){
+  openModal('frameM'); $('frameTitle').textContent = '🖼️ put it in a frame';
+  const body = $('frameBody');
+  body.innerHTML = '';
+  Rooms.ROOMS.forEach(rm => (Rooms.FRAMES[rm.id] || []).forEach(f => {
+    const b = document.createElement('button'); b.className = 'item';
+    b.innerHTML = `<span class="ic">${rm.icon}</span><span class="tt"></span>${frameAssign[f.id] === photoRef(ph) ? '<span class="new">here</span>' : ''}`;
+    b.querySelector('.tt').textContent = f.label;
+    b.onclick = () => { closeModal('frameM'); openFramePicker(f.id, photoRef(ph)); if (rm.id !== room) setRoom(rm.id); };
+    body.appendChild(b);
+  }));
 }
 
 // ---------- particles ----------
@@ -519,6 +662,18 @@ function toast(msg, ms = 2000){ const el = $('toast'); el.textContent = msg; el.
 // ---------- HUD ----------
 function renderTabs(){
   $('tabs').innerHTML = '';
+  if (inPets()){
+    pets.forEach((q, i) => {
+      const b = document.createElement('button'); b.className = 'tab' + (i === petSel ? ' on' : '');
+      b.innerHTML = `${q.id === 'cat' ? '🐱' : '🐶'} ${esc(q.name)} ${i === petSel ? '<small>✏️</small>' : ''}`;
+      b.onclick = () => {
+        if (i === petSel){ const n = prompt('Rename ' + q.name + ':', q.name); if (n && n.trim()){ q.name = n.trim().slice(0, 14); save(); } }
+        petSel = i; renderTabs(); renderTray(); boop(880, .06);
+      };
+      $('tabs').appendChild(b);
+    });
+    return;
+  }
   chars.forEach((c, i) => {
     const b = document.createElement('button'); b.className = 'tab' + (i === sel ? ' on' : '');
     b.innerHTML = `${i === 0 ? '🎀' : '👓'} ${esc(c.name)} ${i === sel ? '<small>✏️</small>' : ''}`;
@@ -532,14 +687,14 @@ function renderTabs(){
   document.title = `${chars[0].name} & ${chars[1].name}`;
 }
 function renderStats(){
-  const s = chars[sel].stats;
+  const s = inPets() ? pets[petSel].stats : chars[sel].stats;
   ['hunger','fun','energy','clean'].forEach(k => $('s-' + k).style.width = s[k] + '%');
   $('loveBar').style.width = love + '%'; $('loveNum').textContent = Math.round(love) + '%';
 }
 function setOn(act, on){ document.querySelector(`[data-act="${act}"]`).classList.toggle('on', on); }
 
 // ---------- actions ----------
-const busy = () => game || bath || sleeping || reading || voicePlaying;
+const busy = () => game || bath || sleeping || reading || voicePlaying || petBath;
 // favourite foods (edit in content.js)
 const FOODS = Object.assign({
   riri: [
@@ -559,6 +714,16 @@ const FOODS = Object.assign({
   ],
 }, LOVE.foods || {});
 function renderTray(){
+  if (inPets()){
+    const tr = $('tray'), q = pets[petSel];
+    tr.innerHTML = `<div class="trayt">${esc(q.name)}'s food</div>`;
+    PET_FOODS[q.id].forEach(fd => {
+      const b = document.createElement('button'); b.innerHTML = `<span>${fd.e}</span><small>${esc(fd.name)}</small>`;
+      b.onclick = () => { const p2 = pets[petSel]; if (p2.bowl) return toast('still eating!'); flying.push({ e: fd.e, food: fd, x: 90, y: H - 18, pet: p2, t: 0 }); boop(500, .06); tr.classList.remove('show'); setOn('feed', false); };
+      tr.appendChild(b);
+    });
+    return;
+  }
   const tr = $('tray'), c = chars[sel];
   tr.innerHTML = `<div class="trayt">${esc(c.name)}'s favorites</div>`;
   (FOODS[c.id] || []).forEach(fd => {
@@ -580,12 +745,12 @@ const actions = {
   bath(){
     if (sleeping || game || reading || voicePlaying) return toast('not right now!');
     if (bath) return endBath();
-    bath = { c: chars[sel], rinse: 0 }; setOn('bath', true);
+    bath = { c: chars[sel], rinse: 0 }; setOn('bath', true); setTimeout(drawBG, 0);
     toast('rub ' + chars[sel].name + ' in the tub to scrub! 🧼', 2500);
   },
   sleep(){
     if (game || bath || reading || voicePlaying) return;
-    sleeping = !sleeping; setOn('sleep', sleeping);
+    sleeping = !sleeping; setOn('sleep', sleeping); setTimeout(drawBG, 0);
     bubbles.forEach(b => b.el.remove()); bubbles.clear();
     pets.forEach(q => q.sleepy = sleeping);
     if (sleeping){ toast('good night 🌙'); boop(440, .3, 'sine', .05, .5); }
@@ -605,7 +770,14 @@ const actions = {
   },
   box(){ $('tray').classList.remove('show'); setOn('feed', false); openBox(); },
 };
-document.querySelectorAll('.btn').forEach(b => b.onclick = () => { ac(); actions[b.dataset.act](); });
+const ACT_ROOM = { feed: 'kitchen', sleep: 'bedroom', bath: 'bathroom' };
+document.querySelectorAll('.btn').forEach(b => b.onclick = () => {
+  ac(); const a = b.dataset.act;
+  if (inPets() && petActions[a]) return petActions[a]();
+  if (ACT_ROOM[a] && !busy() && !(a === 'feed' && $('tray').classList.contains('show'))) setRoom(ACT_ROOM[a]);
+  if (a === 'sleep' && sleeping) return actions.sleep();
+  actions[a]();
+});
 // mini games call this when a round ends
 window.GameHost = {
   who: () => chars[sel].id,
@@ -621,13 +793,13 @@ window.GameHost = {
     save();
   },
 };
-function endBath(){ bath = null; setOn('bath', false); particles.forEach(q => { if (q.type === 'bubble') q.life = Math.min(q.life, .3); }); save(); }
+function endBath(){ bath = null; setOn('bath', false); setTimeout(drawBG, 0); particles.forEach(q => { if (q.type === 'bubble') q.life = Math.min(q.life, .3); }); save(); }
 
 // ---------- talk (record + squeaky playback) ----------
 let rec = null, recTimer = null, analyser = null;
 async function talk(){
   if (sleeping || game || bath || reading || voicePlaying) return toast('not right now!');
-  const c = chars[sel];
+  const c = inPets() ? pets[petSel] : chars[sel];
   if (rec){ rec.stop(); return; }
   if (!navigator.mediaDevices || !window.MediaRecorder){ say(c, 'i can\'t hear you 🥺'); return; }
   try {
@@ -674,8 +846,13 @@ fx.addEventListener('pointerdown', e => {
   $('tray').classList.remove('show'); setOn('feed', false);
   if (game){ game.x = x; return; }
   if (reading || voicePlaying){ stopMessages(); return; }
-  if (!bath && x >= 5 && x <= 47 && y >= 6 && y <= 58){ boop(990, .08, 'sine', .05, 1.3); openBox('photos'); return; }
+  if (totalUnread() > 0 && room !== 'yard' && x < 22 && y < 20){ openBox(); return; }
+  if (room === 'yard' && x >= 150 && x <= 178 && y >= 118 && y <= 178){ boop(990, .08, 'sine', .05, 1.3); openBox('letters'); return; }
+  const fr = !bath && !petBath && (Rooms.FRAMES[room] || []).find(f => x >= f.x - 3 && x <= f.x + f.w + 3 && y >= f.y - 3 && y <= f.y + f.h + 3);
+  if (fr){ boop(990, .08, 'sine', .05, 1.3); openFramePicker(fr.id); return; }
   const q = hitPet(x, y);
+  if (q && petBath){ petScrub(x, y); return; }
+  if (q && inPets()){ const pi = pets.indexOf(q); if (pi !== petSel){ petSel = pi; renderTabs(); renderTray(); } }
   if (q && !bath){
     if (sleeping){ say(q, 'zzz… 💤', 1400); return; }
     q.happyT = 1.6; q.vy = -60; q.jy = -1;
@@ -684,6 +861,7 @@ fx.addEventListener('pointerdown', e => {
     boop(q.snd[0], .14, q.id === 'cat' ? 'sine' : 'square', .05, q.snd[1]);
     return;
   }
+  if (inPets()) return;
   const c = hitChar(x, y); if (!c) return;
   if (bath){ scrub(x, y); return; }
   const i = chars.indexOf(c); if (i !== sel){ sel = i; renderTabs(); }
@@ -699,6 +877,7 @@ fx.addEventListener('pointermove', e => {
   const [x, y] = toLogical(e);
   if (game) game.x = x;
   if (bath) scrub(x, y);
+  if (petBath) petScrub(x, y);
 });
 fx.addEventListener('pointerup', () => dragging = false);
 fx.addEventListener('pointercancel', () => dragging = false);
@@ -751,15 +930,7 @@ function step(now){
       else { c.vy = -45; c.jy = -1; c.wiggle = .5; const g = geo(c); hearts(g.cx, g.headY + 6, 2); }
     }
   }
-  // pets follow the scene
-  pets[0].gy = sc === 'sleep' ? 230 : GROUND; pets[0].tcx = sc === 'sleep' ? 136 : 17;
-  pets[1].gy = GROUND; pets[1].tcx = sc === 'sleep' ? 165 : 162;
-  pets.forEach(q => { q.cx += (q.tcx - q.cx) * Math.min(1, dt * 3); });
-  pets.forEach(q => {
-    q.vy += 400 * dt; q.jy = Math.min(0, q.jy + q.vy * dt); if (q.jy === 0) q.vy = 0;
-    q.happyT -= dt; q.nb -= dt; if (q.nb < 0){ q.blink = .14; q.nb = 2 + Math.random() * 4; } q.blink -= dt;
-    if (!sleeping && !busy() && Math.random() < dt * .04){ q.vy = -40; q.jy = -1; }
-  });
+  updatePets(dt, sc);
   if (sleeping && Math.random() < dt * 1.4){
     const all = [...chars.map(c => [geo(c).cx + 8, geo(c).headY + 6]), ...pets.map(q => [q.cx + 6, petBox(q).y + 2])];
     const [zx, zy] = all[Math.floor(Math.random() * all.length)];
@@ -768,7 +939,13 @@ function step(now){
 
   // food flying to the mouth
   flying = flying.filter(f => {
-    f.t += dt * 1.8; const k = Math.min(1, f.t), g = geo(f.c);
+    f.t += dt * 1.8; const k = Math.min(1, f.t);
+    if (f.pet){
+      f.cx = f.x + (f.pet.bowlX - f.x) * k; f.cy = f.y + (238 - f.y) * k - Math.sin(k * Math.PI) * 50;
+      if (k >= 1){ f.pet.bowl = f.food; f.pet.eatT = 0; boop(400, .05, 'square', .04); return false; }
+      return true;
+    }
+    const g = geo(f.c);
     const hx = g.mx + (f.c.id === 'riri' ? -6 : 7), hy = g.my + 3;
     f.cx = f.x + (hx - f.x) * k; f.cy = f.y + (hy - f.y) * k - Math.sin(k * Math.PI) * 50;
     if (k >= 1){
@@ -794,31 +971,35 @@ function step(now){
   if (chatT < 0 && !busy() && hugT <= 0){
     chatT = 14 + Math.random() * 16;
     const r = Math.random();
-    if (r < .2){ const q = pets[Math.floor(Math.random() * 2)]; say(q, q.lines[Math.floor(Math.random() * q.lines.length)], 2000); }
+    if (r < .2 || inPets()){ const q = pets[Math.floor(Math.random() * 2)]; say(q, petMood(q) < 35 ? petLow(q) : q.lines[Math.floor(Math.random() * q.lines.length)], 2000); }
     else { const c = chars[Math.floor(Math.random() * 2)]; say(c, mood(c) < 35 ? lowLine(c) : c.lines[Math.floor(Math.random() * c.lines.length)]); }
   }
 
   // ---------- draw fx layer ----------
   ctx.clearRect(0, 0, W, H); P = ctx;
-  drawPeople(sc);
-  ctx.drawImage(layer, 0, 0);
+  if (!inPets()){ drawPeople(sc); ctx.drawImage(layer, 0, 0); }
   chars.forEach(c => { if (c.held && c.eatT > .35 && sc !== 'sleep'){ const g = geo(c); ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(c.held, Math.round(g.mx + (c.id === 'riri' ? -6 : 7)), Math.round(g.my + 4)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; } });
   // pets (pixel art with outline)
   pets.forEach(q => {
     pctx.clearRect(0, 0, 34, 34); q.draw(q, t); outline(petCanvas);
     const b = petBox(q);
-    ctx.drawImage(petCanvas, Math.round(q.cx - 17), Math.round((q.gy || GROUND) - 34 + 2 + q.jy));
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(petCanvas, Math.round(q.cx - 17 * q.s), Math.round((q.gy || GROUND) - 32 * q.s + q.jy), 34 * q.s, 34 * q.s);
+    if (q.bowl){ ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(q.bowl.e, q.bowlX, 238); ctx.textAlign = 'left'; }
   });
+  if (toy){ ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(toy.e, Math.round(toy.x), Math.round(toy.y)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
   P = ctx;
   // selection heart
-  if (!sleeping && !bath && hugT <= 0){ const g = geo(chars[sel]); sprite(HEART, Math.round(g.cx - 2), Math.round(g.headY - 10 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
+  if (inPets()){ const b = petBox(pets[petSel]); if (!petNap) sprite(HEART, Math.round(pets[petSel].cx - 2), Math.round(b.y - 8 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
+  else if (!sleeping && !bath && hugT <= 0){ const g = geo(chars[sel]); sprite(HEART, Math.round(g.cx - 2), Math.round(g.headY - 10 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
   // unread envelope on the polaroid
   if (totalUnread() > 0){
-    const ey = Math.round(46 + Math.sin(t * 4) * 2);
-    pa(36, ey, 13, 9, '#4a2a35'); pa(37, ey + 1, 11, 7, '#fff');
-    pa(38, ey + 1, 1, 1, '#e7d3da'); pa(46, ey + 1, 1, 1, '#e7d3da'); pa(39, ey + 2, 2, 1, '#e7d3da'); pa(44, ey + 2, 2, 1, '#e7d3da'); pa(41, ey + 3, 3, 1, '#e7d3da');
-    sprite(HEART_S, 41, ey + 4, '#ff4f7e');
-    if (Math.sin(t * 6) > .6) spawn('spark', 36 + Math.random() * 14, ey - 2, { vx: 0, vy: -6, life: .5, max: .5 });
+    const [ex, ey0] = room === 'yard' ? [158, 122] : [5, 5], ey = Math.round(ey0 + Math.sin(t * 4) * 2);
+    if (room === 'yard'){ pa(174, 134, 2, 10, '#8a5a3a'); pa(174, 134, 6, 4, '#ef4b5b'); }
+    pa(ex, ey, 13, 9, '#4a2a35'); pa(ex + 1, ey + 1, 11, 7, '#fff');
+    pa(ex + 2, ey + 1, 1, 1, '#e7d3da'); pa(ex + 10, ey + 1, 1, 1, '#e7d3da'); pa(ex + 3, ey + 2, 2, 1, '#e7d3da'); pa(ex + 8, ey + 2, 2, 1, '#e7d3da'); pa(ex + 5, ey + 3, 3, 1, '#e7d3da');
+    sprite(HEART_S, ex + 5, ey + 4, '#ff4f7e');
+    if (Math.sin(t * 6) > .6) spawn('spark', ex + Math.random() * 14, ey - 2, { vx: 0, vy: -6, life: .5, max: .5 });
   }
   ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   flying.forEach(f => ctx.fillText(f.e, Math.round(f.cx), Math.round(f.cy)));
@@ -998,8 +1179,9 @@ function showTab(tab, idx){
       markSeen('photos', ph);
     }
     const row = document.createElement('div'); row.className = 'prow';
-    row.innerHTML = `<button class="pbtn">📷 take a new one</button>`;
-    row.firstChild.onclick = () => { closeModal('box'); openCam(); };
+    row.innerHTML = `<button class="pbtn ghost" style="flex:1">🖼️ put in a frame</button><button class="pbtn">📷 take a new one</button>`;
+    row.children[0].onclick = () => { const cur = list[Math.min(idx || 0, list.length - 1)]; if (cur){ closeModal('box'); chooseFrameFor(cur); } };
+    row.children[1].onclick = () => { closeModal('box'); openCam(); };
     body.appendChild(row);
     return;
   }
@@ -1217,7 +1399,7 @@ function showShot(data){
     const ph = { date: today(), ts: Date.now(), from, caption: $('shotCap').value.trim(), src: shot, local: true };
     addItem('photos', ph);
     seen.add(ikey('photos', ph)); store('riri-seen', [...seen]); updateBadge();
-    setFramePhoto(ph.src);
+    drawBG();
     chars.forEach(c => { c.grinT = 2; c.vy = -60; c.jy = -1; }); pets.forEach(q => { q.happyT = 2; });
     hearts(26, 30, 6); boop(880, .1, 'sine', .06, 1.5);
     body.innerHTML = `<div class="locket"><img alt="">${ph.caption ? '<div class="cap"></div>' : ''}</div>
@@ -1342,7 +1524,7 @@ window.addEventListener('sync:ready', () => { syncBtn.dataset.s = window.Sync.st
 window.addEventListener('sync:items', e => {
   const { kind, items, added } = e.detail;
   remote[kind] = items;
-  if (kind === 'photos'){ const top = lists.photos()[0]; if (top && (!framePhoto || framePhoto.src !== new URL(top.src, location.href).href)) setFramePhoto(top.src); }
+  if (kind === 'photos') drawBG();
   const forMe = added.filter(it => it.from && it.from !== who);
   if (forMe.length){
     const it = forMe[0], n = nameOf(it.from);
@@ -1359,6 +1541,8 @@ window.addEventListener('sync:state', e => {
   if (st.by === deviceId || st.ts === stateTs) return;
   (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name; Object.assign(chars[i].stats, c.stats || {}); } });
   if (typeof st.love === 'number') love = st.love;
+  (st.pets || []).forEach((p2, i) => { if (pets[i]){ if (p2.name) pets[i].name = p2.name; Object.assign(pets[i].stats, p2.stats || {}); } });
+  if (st.frames && typeof st.frames === 'object'){ frameAssign = st.frames; store('riri-frames', frameAssign); drawBG(); }
   stateTs = st.ts;
   decay(Math.max(0, (Date.now() - st.ts) / 1000));
   save(false); renderTabs(); renderStats();
@@ -1367,7 +1551,7 @@ if (who) sel = chars.indexOf(charById(who));
 
 // ---------- start ----------
 load(); renderTabs(); renderStats(); updateBadge();
-setFramePhoto((lists.photos()[0] || {}).src);
+drawBG(); renderRooms();
 if (totalUnread()) setTimeout(() => toast('💌 you have something new!', 3000), 900);
 window.__pet = { chars, pets, say, actions, openBox, showTab, readLetter, openCam, showShot, geo };
 window.addEventListener('resize', placeBubbles);

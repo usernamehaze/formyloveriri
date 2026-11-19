@@ -3,6 +3,10 @@
 A little pixel-art pet game for Riri. Play it at **https://usernamehaze.github.io/formyloveriri/**
 
 ## In the game
+- **🏡 Rooms:** outside the house, living room, kitchen, bedroom, bathroom and the 🐾 fur babies room. Feed takes you to the kitchen, Sleep to the bedroom and Bath to the bathroom.
+- **🖼️ Frames:** tap any frame on a wall to choose which photo goes in it (or from 📸 Photos → "put in a frame"). Synced between your phones.
+- **🐾 Fur babies room:** Mochi & Sunny have their own stats. Feed (bowls), play (ball / yarn), bath, nap, hug, and talk (they repeat you in a squeaky voice).
+- **📱 Home screen:** in Safari tap Share → *Add to Home Screen* to get the pixel app icon and open it full screen.
 - **🎮 Play:** two games. **🍒 Cherry Dash** is a 3-lane runner (swipe ← → to switch lanes, ↑ jump, ↓ slide), and **💖 Heart Quest** is a platformer where you run, jump and stomp bugs to reach your partner at the end.
 - **Poses:** tap them, hug (they walk together and embrace), sleep (they share a bed), bath (bubble tub), and feed (they hold the food).
 - **📷 Camera (top right):** snap what you're doing. It goes on the polaroid on the wall, like Locket. Tap **send** to text it to your person.
