@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Riri &amp; Me</title>
+<title>Riri &amp; Haze</title>
 <link rel="icon" type="image/png" href="icons/icon-128.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f49ab0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Riri &amp; Me">
+<meta name="apple-mobile-web-app-title" content="Riri &amp; Haze">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@
   [data-act="home"]{--bc:#ffe9a8; --bd:#e8b744}
   [data-act="cam"]{--bc:#e3efff; --bd:#86aee0}
   .jcard{width:100%; display:flex; gap:10px; text-align:left; border:2px solid var(--line); background:#fffdf6; color:#4a2a35; border-radius:14px; padding:8px; margin-bottom:10px; font:inherit; cursor:pointer; box-shadow:0 3px 0 #ead9c2}
-  .jcard img{width:76px; height:76px; border-radius:12px; object-fit:cover; flex:none}
+  .jcard img:not(.pxi){width:76px; height:76px; border-radius:12px; object-fit:cover; flex:none}
   .jcard .jd{font-size:11px; color:#b0808e} .jcard b{display:block; font-size:15px; margin:1px 0 3px}
   .jcard p{margin:0; font-family:Caveat, cursive; font-size:19px; line-height:1.15; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
   .jtext{background:#fffdf6; color:#4a2a35; border-radius:10px; padding:10px 12px; font-family:Caveat, cursive; font-size:21px; line-height:1.25; white-space:pre-wrap; border-left:4px solid #f6c34a; margin:4px 0 10px; box-shadow:0 2px 0 #ead9c2}
@@ -58,7 +58,7 @@
   .fgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
   .fgrid button{aspect-ratio:1; border-radius:12px; border:3px solid var(--line); padding:0; overflow:hidden; cursor:pointer; background:var(--bg); font:inherit; font-size:12px; color:var(--ink)}
   .fgrid button.on{border-color:#f6c34a}
-  .fgrid img{width:100%; height:100%; object-fit:cover; display:block}
+  .fgrid img:not(.pxi){width:100%; height:100%; object-fit:cover; display:block}
   .tab{flex:1; border:2px solid var(--line); background:var(--panel); color:var(--ink); border-radius:10px;
        padding:6px 8px; font:inherit; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px}
   .tab.on{border-color:var(--pink-d); background:var(--pink); color:#fff}
@@ -124,7 +124,7 @@
   @keyframes up{from{transform:translateY(40px); opacity:0}}
   .sheet-head{display:flex; align-items:center; justify-content:space-between; padding:12px 14px 6px; font-size:20px}
   .x{border:0; background:none; font:inherit; font-size:20px; color:var(--ink); cursor:pointer}
-  .seg{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding:4px 14px 10px}
+  .seg{display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:4px 14px 10px}
   .seg button,.chip{position:relative; border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:10px; padding:7px 0; font:inherit; font-size:14px; font-weight:600; cursor:pointer}
   .seg button.on,.chip.on{background:var(--pink); border-color:var(--pink-d); color:#fff}
   .seg .n{position:absolute; top:-7px; right:-5px; background:#ff4f7e; color:#fff; border-radius:8px; font-size:10px; padding:1px 5px}
@@ -176,7 +176,7 @@
 
   /* locket */
   .locket{position:relative; width:100%; aspect-ratio:1; border-radius:28px; overflow:hidden; background:#111; box-shadow:0 0 0 4px #f6c34a, 0 6px 0 4px #d9a531}
-  .locket img,.locket video{width:100%; height:100%; object-fit:cover; display:block}
+  .locket img:not(.pxi),.locket video{width:100%; height:100%; object-fit:cover; display:block}
   .locket video.mirror{transform:scaleX(-1)}
   .cap{position:absolute; left:50%; bottom:14px; transform:translateX(-50%); background:rgba(40,30,35,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#fff;
        padding:6px 14px; border-radius:20px; font-size:16px; white-space:nowrap; max-width:90%; overflow:hidden; text-overflow:ellipsis; border:0; font-family:inherit; text-align:center}
@@ -184,8 +184,8 @@
   input.cap::placeholder{color:rgba(255,255,255,.75)}
   .lmeta{text-align:center; color:var(--muted); font-size:13px; margin:12px 0 8px}
   .thumbs{display:flex; gap:8px; overflow-x:auto; padding:4px 2px}
-  .thumbs img{width:56px; height:56px; object-fit:cover; border-radius:14px; border:3px solid transparent; cursor:pointer; flex:none}
-  .thumbs img.on{border-color:#f6c34a}
+  .thumbs img:not(.pxi){width:56px; height:56px; object-fit:cover; border-radius:14px; border:3px solid transparent; cursor:pointer; flex:none}
+  .thumbs img.on:not(.pxi){border-color:#f6c34a}
   .camrow{display:flex; align-items:center; justify-content:space-around; margin-top:16px}
   .round{width:50px; height:50px; border-radius:50%; border:2px solid var(--line); background:var(--bg); font-size:22px; cursor:pointer; color:var(--ink)}
   .shutter{width:74px; height:74px; border-radius:50%; border:5px solid #f6c34a; background:#fff; cursor:pointer; box-shadow:inset 0 0 0 4px var(--panel)}
@@ -202,12 +202,62 @@
   .lbl{font-size:13px; color:var(--muted); margin:12px 0 4px}
   .rec{display:flex; align-items:center; gap:10px; margin-bottom:12px}
   .recdot{width:12px; height:12px; border-radius:50%; background:#ef4b5b; animation:pulse 1s infinite}
+
+  /* ---------- everything pixel ---------- */
+  :root{ --pxc: polygon(0 4px,2px 4px,2px 2px,4px 2px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 2px,calc(100% - 2px) 2px,calc(100% - 2px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 2px) calc(100% - 4px),calc(100% - 2px) calc(100% - 2px),calc(100% - 4px) calc(100% - 2px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 2px),2px calc(100% - 2px),2px calc(100% - 4px),0 calc(100% - 4px)); }
+  .btn,.tab,.chip,.pbtn,.item,.seg button,.roombar button,.roomacts button,.jcard,.jpage,.env,.stats,.sheet,#tray,#tray button,.fgrid button,.round,.field,.stline,.locket,.paper,.jtext,.book,.bookhead,.compose input,.compose textarea,.roombar,.syncb,.bar,#wrap,.thumbs img:not(.pxi){
+    border-radius:0 !important; clip-path:var(--pxc); box-shadow:none !important; }
+  .btn,.tab,.chip,.pbtn,.item,.seg button,.roombar button,.roomacts button,#tray button,.round{ border-bottom-width:4px !important; }
+  .btn:active,.pbtn:active,.chip:active,.roomacts button:active,.roombar button:active{ transform:translateY(2px); border-bottom-width:2px !important; }
+  .locket{ outline:4px solid #f6c34a; outline-offset:-4px }
+  .paper,.jtext,.jcard p,.jpage p,.compose input,.compose textarea,.env .to,.paper h3,.paper .sg{ font-family:"Pixelify Sans", monospace !important; }
+  .paper .lb{ font-size:16px; line-height:28px } .paper h3{ font-size:20px } .paper .sg{ font-size:17px } .env .to{ font-size:15px }
+  .jtext{ font-size:15px } .jcard p,.jpage p{ font-size:13px }
+  .compose input,.compose textarea{ font-size:16px !important; line-height:1.4 }
+  img.pxi{ max-width:none; object-fit:contain; border:0 !important; flex:none; height:1.2em; width:auto; image-rendering:pixelated; image-rendering:crisp-edges; vertical-align:-.22em; display:inline-block; animation:pxbob 1.4s infinite steps(1) }
+  .btn b img.pxi{ height:26px; vertical-align:0 }
+  .roombar button b img.pxi{ height:26px }
+  .stat .ic img.pxi, .love img.pxi{ height:16px }
+  .seg img.pxi{ height:16px }
+  .env .seal img.pxi{ height:16px; animation:none }
+  .bicon img.pxi{ height:34px }
+  .btn:nth-child(2n) img.pxi, .roomacts button:nth-child(2n) img.pxi{ animation-delay:-.7s }
+  .btn.on img.pxi, .btn:active img.pxi{ animation:pxjump .5s infinite steps(1) }
+  .love img.pxi{ animation:pxbeat .9s infinite steps(1) }
+  @keyframes pxbob{ 0%{ transform:translateY(0) } 50%{ transform:translateY(-1px) } }
+  @keyframes pxjump{ 0%{ transform:translateY(0) } 33%{ transform:translateY(-3px) } 66%{ transform:translateY(-1px) } }
+  @keyframes pxbeat{ 0%{ transform:scale(1) } 50%{ transform:scale(1.18) } }
+  .sheet{ animation:pxup .24s steps(4) both } @keyframes pxup{ from{ transform:translateY(48px); opacity:.3 } }
+  .bubble.in{ animation:pxpop .2s steps(3) both } @keyframes pxpop{ from{ scale:.5; opacity:0 } }
+  #toast{ transition:opacity .3s steps(3) }
+  .bar i{ transition:width .5s steps(6) }
+  .dot{ border-radius:0; clip-path:var(--pxc); animation:pxbeat 1s infinite steps(1) }
+  .bubble{ border-radius:0; box-shadow:3px 3px 0 rgba(74,42,53,.25) }
+  /* journal books */
+  .books{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:6px 4px 10px }
+  .book{ position:relative; aspect-ratio:.72; border:3px solid var(--b2); border-bottom-width:6px; background:var(--b1); color:#4a2a35; cursor:pointer; font:inherit; padding:14px 10px 10px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; animation:pxbob 2s infinite steps(1) }
+  .book:nth-child(2){ animation-delay:-1s }
+  .book .spine{ position:absolute; left:0; top:0; bottom:0; width:10px; background:var(--b2) }
+  .book .spine:after{ content:""; position:absolute; left:2px; right:2px; top:12px; height:3px; background:#fff8; box-shadow:0 12px 0 #fff8, 0 24px 0 #fff8 }
+  .book .btitle{ font-size:15px; font-weight:700; text-align:center; background:#fff; padding:4px 6px; clip-path:var(--pxc) }
+  .book .bpages{ font-size:12px; opacity:.8 }
+  .book .new{ position:absolute; top:6px; right:6px }
+  .book .bmine{ position:absolute; bottom:6px; right:8px; font-size:10px; background:#fff; padding:1px 5px }
+  .bookhead{ display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:6px; background:var(--b1); border:3px solid var(--b2) }
+  .bookhead b{ flex:1; font-size:15px; color:#4a2a35 }
+  .bookhead .pbtn{ flex:0 0 auto; padding:6px 10px }
+  .jpage{ width:100%; display:flex; gap:10px; text-align:left; border:2px solid var(--line); background:#fffdf6; color:#4a2a35; padding:10px; margin-bottom:10px; font:inherit; cursor:pointer;
+          background-image:repeating-linear-gradient(transparent 0 15px,#f3dfe4 15px 16px); position:relative }
+  .jpage img:not(.pxi){ width:64px; height:64px; object-fit:cover; flex:none; image-rendering:auto }
+  .jpage .jd{ font-size:11px; color:#b0808e } .jpage b{ display:block; font-size:15px; margin:1px 0 3px }
+  .jpage p{ margin:0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden }
+  .jpage .new{ position:absolute; top:6px; right:6px }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div style="display:flex;align-items:center;gap:8px"><h1 id="title">Riri <span>&amp;</span> Me</h1><button class="syncb" id="syncBtn" aria-label="Sync">🔗<i></i></button></div>
+    <div style="display:flex;align-items:center;gap:8px"><h1 id="title">Riri <span>&amp;</span> Haze</h1><button class="syncb" id="syncBtn" aria-label="Sync">🔗<i></i></button></div>
     <div class="love">💗 <div class="bar"><i id="loveBar" style="background-color:var(--love)"></i></div><span id="loveNum">80%</span></div>
   </header>
   <div class="tabs" id="tabs"></div>
@@ -243,7 +293,7 @@
   <div class="sheet">
     <div class="sheet-head"><b>💌 Love Box</b><button class="x" data-close="box" aria-label="Close">✕</button></div>
     <div class="seg">
-      <button data-tab="letters">✉️ Letters</button><button data-tab="voice">🎧 Voice</button><button data-tab="photos">📸 Photos</button>
+      <button data-tab="letters">✉️ Letters</button><button data-tab="journal">📔 Journal</button><button data-tab="photos">📸 Photos</button><button data-tab="voice">🎧 Voice</button>
     </div>
     <div class="body" id="boxBody"></div>
   </div>
@@ -290,6 +340,7 @@
 </script>
 <script src="sync-config.js"></script>
 <script src="content.js"></script>
+<script src="js/icons.js"></script>
 <script src="js/people.js"></script>
 <script src="js/rooms.js"></script>
 <script src="js/games.js"></script>
@@ -311,6 +362,11 @@ function fetchStore(k, d){ try { const v = JSON.parse(localStorage.getItem(k) ||
 // ---------- pixel helpers (draw onto P) ----------
 let P = ctx;
 function pa(x, y, w, h, c){ P.fillStyle = c; P.fillRect(Math.round(x), Math.round(y), w, h); }
+function drawEmo(e, x, y){
+  const c = window.PixelIcons && PixelIcons.canvasFor(e);
+  if (c){ ctx.imageSmoothingEnabled = false; ctx.drawImage(c, Math.round(x - 7), Math.round(y - 7)); }
+  else { ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, Math.round(x), Math.round(y)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
+}
 function sprite(rows, x, y, c, s = 1){
   P.fillStyle = c;
   rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] === '1') P.fillRect(Math.round(x + i * s), Math.round(y + j * s), s, s); });
@@ -334,7 +390,7 @@ const PD = People.DEF;
 const chars = [
   { id:'riri', name:'Riri', home:64, x:64, pitch:1.55, stats:DEF(),
     lines:['hehe that tickles!','i love you {nick} 💕','hold my hand {nick}?','hii {nick}!','you\'re so pogi 😳','kiss me {nick}? 😚','*giggles*','stay with me forever, {nick}?','feed me strawberries 🍓','leche flan date? 🍮','i miss you {nick} 🥺','you\'re so silly {nick}'] },
-  { id:'me', name:'Me', home:116, x:116, pitch:1.3, stats:DEF(),
+  { id:'me', name:'Haze', home:116, x:116, pitch:1.3, stats:DEF(),
     lines:['hi {nick}!','you look so pretty today','i love you {nick} 💕','misis ko 💕','hehe stop that {nick}!','wanna get ramen? 🍜','coffee date? ☕','i\'m so lucky to have you','👍👍','best day ever with you {nick}'] },
 ];
 chars.forEach(c => Object.assign(c, { kind:'char', d: PD[c.id], jy:0, vy:0, wave:0, cheer:0, grinT:0, eatT:0, held:null, wiggle:0, talking:false, listening:false, mouthAmp:0, fake:null, blink:0, nb:2 + Math.random() * 3, look:0, walking:false }));
@@ -522,7 +578,7 @@ function save(action = true){
 }
 function load(){
   const d = fetchStore('riri-pet', null); if (!d) return;
-  (d.chars || []).forEach((s, i) => { if (chars[i]){ chars[i].name = s.name || chars[i].name; Object.assign(chars[i].stats, s.stats); } });
+  (d.chars || []).forEach((s, i) => { if (chars[i]){ chars[i].name = (s.name === 'Me' ? 'Haze' : s.name) || chars[i].name; Object.assign(chars[i].stats, s.stats); } });
   love = d.love ?? love; stateTs = d.actionTs || 0;
   const OLD = { Mochi: 'Molly', Sunny: 'Shiro' };
   (d.pets || []).forEach((s, i) => { if (pets[i]){ pets[i].name = OLD[s.name] || s.name || pets[i].name; Object.assign(pets[i].stats, s.stats || {}); } });
@@ -1044,16 +1100,16 @@ function step(now){
   // ---------- draw fx layer ----------
   ctx.clearRect(0, 0, W, H); P = ctx;
   if (!inPets()){ drawPeople(sc); ctx.drawImage(layer, 0, 0); }
-  chars.forEach(c => { if (c.held && c.eatT > .35 && sc !== 'sleep'){ const g = geo(c); ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(c.held, Math.round(g.mx + (c.id === 'riri' ? -6 : 7)), Math.round(g.my + 4)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; } });
+  chars.forEach(c => { if (c.held && c.eatT > .35 && sc !== 'sleep'){ const g = geo(c); drawEmo(c.held, g.mx + (c.id === 'riri' ? -6 : 7), g.my + 4); } });
   // pets (pixel art with outline)
   pets.forEach(q => {
     pctx.clearRect(0, 0, 34, 34); q.draw(q, t); outline(petCanvas);
     const b = petBox(q);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(petCanvas, Math.round(q.cx - 17 * q.s), Math.round((q.gy || GROUND) - 32 * q.s + q.jy), 34 * q.s, 34 * q.s);
-    if (q.bowl){ ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(q.bowl.e, q.bowlX, 238); ctx.textAlign = 'left'; }
+    if (q.bowl) drawEmo(q.bowl.e, q.bowlX, 236);
   });
-  if (toy){ ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(toy.e, Math.round(toy.x), Math.round(toy.y)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
+  if (toy) drawEmo(toy.e, toy.x, toy.y);
   P = ctx;
   // selection heart
   if (inPets()){ const b = petBox(pets[petSel]); if (!petNap) sprite(HEART, Math.round(pets[petSel].cx - 2), Math.round(b.y - 8 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
@@ -1068,7 +1124,7 @@ function step(now){
     if (Math.sin(t * 6) > .6) spawn('spark', ex + Math.random() * 14, ey - 2, { vx: 0, vy: -6, life: .5, max: .5 });
   }
   ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  flying.forEach(f => ctx.fillText(f.e, Math.round(f.cx), Math.round(f.cy)));
+  flying.forEach(f => drawEmo(f.e, f.cx, f.cy));
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   drawParticles(dt);
   if (sleeping){
@@ -1183,8 +1239,9 @@ const byDate = (a, b) => String(b.date || '').localeCompare(String(a.date || '')
 let localVoice = fetchStore('riri-voice', []);
 const dedupe = arr => { const ids = new Set(); return arr.filter(x => !x.id || (ids.has(x.id) ? false : ids.add(x.id))); };
 const lists = {
-  letters: () => dedupe([...remote.letters, ...localLetters, ...(LOVE.letters || [])]).map(l => Object.assign({ from: 'me', to: 'riri' }, l)).sort(byDate),
-  voice: () => dedupe([...remote.voice, ...localVoice, ...(LOVE.voice || [])]).sort(byDate),
+  letters: () => allLetters().filter(l => l.type !== 'journal'),
+  journal: () => allLetters().filter(l => l.type === 'journal'),
+  voice: () => dedupe([...remote.voice, ...localVoice, ...(LOVE.voice || []).map(v => Object.assign({ id: 'c:' + v.src }, v))]).filter(v => !v.deleted).sort(byDate),
   photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || []).map(p => Object.assign({ id: 'c:' + p.src }, p))]).filter(p => !p.deleted).sort(byDate),
 };
 // save something new: to the shared database if connected, otherwise on this phone
@@ -1200,8 +1257,25 @@ function keepLocal(kind, item){
   if (!arr.includes(item)) arr.unshift(item);
   while (!store('riri-' + kind, arr) && arr.length > 1) arr.pop();
 }
-const unreadOf = k => lists[k]().filter(it => !seen.has(ikey(k, it))).length;
-const totalUnread = () => unreadOf('letters') + unreadOf('voice') + unreadOf('photos');
+function allLetters(){
+  return dedupe([...remote.letters, ...localLetters, ...(LOVE.letters || []).map(l => Object.assign({ id: 'c:' + (l.date || '') + (l.title || '') }, l)), ...(LOVE.journal || []).map(l => Object.assign({ id: 'cj:' + (l.date || '') + (l.title || ''), type: 'journal' }, l))])
+    .filter(l => !l.deleted).map(l => Object.assign({ from: 'me', to: l.from === 'riri' ? 'me' : 'riri' }, l)).sort(byDate);
+}
+const unreadOf = k => lists[k]().filter(it => !seen.has(ikey(k, it)) && !(k === 'journal' && it.from === who)).length;
+const totalUnread = () => unreadOf('letters') + unreadOf('voice') + unreadOf('photos') + unreadOf('journal');
+// edit or delete anything (letters, journal pages, photos, voice notes), synced if paired
+function editItem(kind, it0, ch){
+  const it = Object.assign({}, it0, ch, { id: it0.id || ('c:' + (it0.src || ((it0.date || '') + (it0.title || '')))) }); delete it.local;
+  if (it.deleted){ if (kind === 'photos' || kind === 'voice') it.src = ''; if (kind === 'letters') it.body = ''; }
+  if (synced()){ remote[kind] = [it, ...remote[kind].filter(p => p.id !== it.id)]; window.Sync.add(kind, it).catch(() => toast('sync failed, try again')); }
+  else {
+    let arr = { letters: localLetters, photos: localPhotos, voice: localVoice }[kind].filter(p => p.id !== it.id); arr.unshift(it);
+    if (kind === 'letters') localLetters = arr; else if (kind === 'photos') localPhotos = arr; else localVoice = arr;
+    while (!store('riri-' + kind, arr) && arr.length > 1) arr.pop();
+  }
+  updateBadge();
+  return it;
+}
 function updateBadge(){
   const n = totalUnread(), d = $('boxDot'); d.textContent = n; d.style.display = n ? 'block' : 'none';
   document.querySelectorAll('#box .seg button').forEach(b => {
@@ -1230,6 +1304,7 @@ function showTab(tab, idx){
   if (tab === 'letters') return showEnvelopes();
   const list = lists[tab]();
   if (tab === 'photos') return showPhotos(idx);
+  if (tab === 'journal') return showBooks();
   voiceRecorderUI(body);
   if (!list.length){ body.insertAdjacentHTML('beforeend', `<div class="empty">no voice notes yet… 🥺<br>they'll show up here</div>`); return; }
   list.forEach(it => {
@@ -1239,7 +1314,10 @@ function showTab(tab, idx){
     const tt = b.querySelector('.tt'); tt.textContent = it.title || 'voice note';
     tt.insertAdjacentHTML('beforeend', `<small>from ${esc(nameOf(it.from || 'me'))} · ${esc(fmtDate(it.date))}</small>`);
     b.onclick = () => { boop(760, .06); closeModal('box'); markSeen('voice', it); playVoice(it); };
-    body.appendChild(b);
+    const del = document.createElement('button'); del.className = 'pbtn danger'; del.style.margin = '0 0 8px 6px'; del.textContent = '🗑️';
+    del.onclick = () => { if (confirm('delete this voice note?')){ editItem('voice', it, { deleted: true }); toast('deleted 🗑️'); showTab('voice'); } };
+    const row = document.createElement('div'); row.style.display = 'flex'; row.appendChild(b); row.appendChild(del); b.style.flex = '1';
+    body.appendChild(row);
   });
 }
 function showEnvelopes(){
@@ -1281,7 +1359,8 @@ function showLetter(l){
   const reader = charById(l.from) || chars[1];
   const body = $('boxBody'); body.scrollTop = 0;
   body.innerHTML = `<div class="paper"><div class="ld"></div><h3></h3><div class="lb"></div><div class="sg"></div></div>
-    <div class="prow"><button class="pbtn ghost" id="lBack">← back</button><button class="pbtn" id="lRead"></button></div>`;
+    <div class="prow"><button class="pbtn ghost" id="lBack">← back</button><button class="pbtn" id="lRead"></button><button class="pbtn danger" id="lDel" aria-label="Delete">🗑️</button></div>`;
+  $('lDel').onclick = () => { if (!confirm('delete this letter?' + (synced() ? ' (it will be removed from both phones)' : ''))) return; editItem('letters', l, { deleted: true }); toast('letter deleted 🗑️'); showTab('letters'); };
   body.querySelector('.ld').textContent = `to ${nameOf(l.to)} · ${fmtDate(l.date)}`;
   body.querySelector('h3').textContent = l.title || '';
   body.querySelector('.lb').textContent = l.body || '';
@@ -1322,19 +1401,89 @@ function showCompose(){
   };
 }
 
+// ---------- 📔 journal books: one for each of you, both can read both ----------
+const BOOKS = { riri: { c1: '#ffb3c6', c2: '#e77f9c', icon: '🎀' }, me: { c1: '#a9c8ee', c2: '#6f9bd6', icon: '👓' } };
+const canWrite = owner => !who || who === owner;
+function pagesOf(owner){
+  const pages = lists.journal().filter(p => p.from === owner).map(p => ({ kind: 'page', it: p, date: p.date, ts: p.ts || 0 }));
+  const photos = lists.photos().filter(p => (p.from || 'me') === owner && p.journal).map(p => ({ kind: 'photo', it: p, date: p.date, ts: p.ts || 0 }));
+  return [...pages, ...photos].sort(byDate);
+}
+function showBooks(){
+  const body = $('boxBody');
+  body.innerHTML = `<div class="books"></div><div class="hint" style="text-align:center">each of you has your own journal. you can read each other's 💕</div>`;
+  const wrap2 = body.querySelector('.books');
+  ['riri', 'me'].forEach(owner => {
+    const bk = BOOKS[owner], n = pagesOf(owner).length, unread = lists.journal().filter(p => p.from === owner && p.from !== who && !seen.has(ikey('journal', p))).length;
+    const b = document.createElement('button'); b.className = 'book'; b.style.setProperty('--b1', bk.c1); b.style.setProperty('--b2', bk.c2);
+    b.innerHTML = `<div class="spine"></div><div class="bicon">${bk.icon}</div><div class="btitle"></div><div class="bpages">${n} page${n === 1 ? '' : 's'}</div>${unread ? `<span class="new">${unread} NEW</span>` : ''}${owner === who ? '<div class="bmine">mine</div>' : ''}`;
+    b.querySelector('.btitle').textContent = `${nameOf(owner)}'s journal`;
+    b.onclick = () => { boop(620, .12, 'sine', .05, 1.6); showBook(owner); };
+    wrap2.appendChild(b);
+  });
+}
+function showBook(owner){
+  const body = $('boxBody'), bk = BOOKS[owner], pages = pagesOf(owner); body.scrollTop = 0;
+  body.innerHTML = `<div class="bookhead" style="--b1:${bk.c1};--b2:${bk.c2}"><button class="pbtn ghost" id="bkBack">←</button><b></b>${canWrite(owner) ? '<button class="pbtn" id="bkWrite">✍️ write</button>' : ''}</div><div class="pages"></div>`;
+  body.querySelector('.bookhead b').textContent = `${bk.icon} ${nameOf(owner)}'s journal`;
+  $('bkBack').onclick = () => showTab('journal');
+  if ($('bkWrite')) $('bkWrite').onclick = () => writePage(owner);
+  const list = body.querySelector('.pages');
+  if (!pages.length){ list.innerHTML = `<div class="empty">no pages yet… ${canWrite(owner) ? 'write the first one ✍️' : '💭'}</div>`; return; }
+  pages.forEach(pg => {
+    const it = pg.it, card = document.createElement('button'); card.className = 'jpage';
+    const isNew = pg.kind === 'page' && owner !== who && !seen.has(ikey('journal', it));
+    card.innerHTML = `${pg.kind === 'photo' ? '<img alt="">' : ''}<div style="flex:1;min-width:0"><div class="jd"></div><b></b><p></p></div>${isNew ? '<span class="new">NEW</span>' : ''}`;
+    if (pg.kind === 'photo') card.querySelector('img').src = it.src;
+    card.querySelector('.jd').textContent = fmtDate(it.date) + (pg.kind === 'photo' ? ' · 📸' : '');
+    card.querySelector('b').textContent = (pg.kind === 'photo' ? it.caption : it.title) || 'dear journal';
+    card.querySelector('p').textContent = pg.kind === 'photo' ? it.journal : it.body;
+    card.onclick = () => pg.kind === 'photo' ? (photoView = 'locket', showTab('photos', lists.photos().indexOf(lists.photos().find(p => p.id === it.id)))) : showPage(owner, it);
+    list.appendChild(card);
+  });
+}
+function showPage(owner, it){
+  if (owner !== who) markSeen('journal', it);
+  const body = $('boxBody'), bk = BOOKS[owner]; body.scrollTop = 0;
+  body.innerHTML = `<div class="paper page" style="border-left-color:${bk.c2}"><div class="ld"></div><h3></h3><div class="lb"></div><div class="sg"></div></div>
+    <div class="prow"><button class="pbtn ghost" id="pgBack">← back</button>${canWrite(owner) ? '<button class="pbtn ghost" id="pgEdit" style="flex:1">✏️ edit</button><button class="pbtn danger" id="pgDel">🗑️</button>' : ''}</div>`;
+  body.querySelector('.ld').textContent = `${nameOf(owner)}'s journal · ${fmtDate(it.date)}`;
+  body.querySelector('h3').textContent = it.title || 'dear journal';
+  body.querySelector('.lb').textContent = it.body || '';
+  body.querySelector('.sg').textContent = '— ' + nameOf(owner);
+  $('pgBack').onclick = () => showBook(owner);
+  if ($('pgEdit')){
+    $('pgEdit').onclick = () => writePage(owner, it);
+    $('pgDel').onclick = () => { if (!confirm('delete this journal page?')) return; editItem('letters', it, { deleted: true }); toast('page deleted 🗑️'); showBook(owner); };
+  }
+}
+function writePage(owner, it){
+  const body = $('boxBody'); body.scrollTop = 0;
+  body.innerHTML = `<div class="compose"><div class="lbl">${BOOKS[owner].icon} ${esc(nameOf(owner))}'s journal · ${esc(fmtDate(it ? it.date : today()))}</div>
+      <input id="pgTitle" maxlength="50" placeholder="title (how was today?)">
+      <textarea id="pgBody" placeholder="dear journal…"></textarea></div>
+    <div class="prow"><button class="pbtn ghost" id="pgCancel">← back</button><button class="pbtn" id="pgSave">📔 save page</button></div>`;
+  if (it){ $('pgTitle').value = it.title || ''; $('pgBody').value = it.body || ''; }
+  $('pgCancel').onclick = () => it ? showPage(owner, it) : showBook(owner);
+  $('pgSave').onclick = () => {
+    const title = $('pgTitle').value.trim(), text = $('pgBody').value.trim();
+    if (!text) return toast('write something first ✍️');
+    if (it) editItem('letters', it, { title, body: text, edited: Date.now() });
+    else { const pg = { type: 'journal', date: today(), ts: Date.now(), from: owner, to: owner === 'riri' ? 'me' : 'riri', title: title || 'dear journal', body: text, local: true }; addItem('letters', pg); seen.add(ikey('journal', pg)); store('riri-seen', [...seen]); }
+    boop(880, .1, 'sine', .05, 1.5); toast('saved in your journal 📔'); showBook(owner);
+  };
+}
+
 // ---------- 📸 locket + 📔 journal ----------
 let photoView = 'locket';
 function editPhoto(ph, ch){
-  const it = Object.assign({}, ph, ch, { id: ph.id || ('c:' + ph.src) }); delete it.local;
-  if (it.deleted) it.src = '';
-  if (synced()){ remote.photos = [it, ...remote.photos.filter(p => p.id !== it.id)]; window.Sync.add('photos', it).catch(() => toast('sync failed, try again')); }
-  else { localPhotos = [it, ...localPhotos.filter(p => p.id !== it.id)]; while (!store('riri-photos', localPhotos) && localPhotos.length > 1) localPhotos.pop(); }
+  const it = editItem('photos', ph, ch);
   if (it.deleted) Object.keys(frameAssign).forEach(k => { if (frameAssign[k] === it.id || frameAssign[k] === ph.src) delete frameAssign[k]; });
   store('riri-frames', frameAssign); drawBG(); updateBadge();
 }
 function showPhotos(idx){
   const body = $('boxBody'), list = lists.photos();
-  body.innerHTML = `<div class="chips"><button class="chip" data-v="locket">📸 locket</button><button class="chip" data-v="journal">📔 journal</button></div><div id="pv"></div>`;
+  body.innerHTML = `<div id="pv"></div>`; photoView = 'locket';
   body.querySelectorAll('[data-v]').forEach(b => { b.classList.toggle('on', b.dataset.v === photoView); b.onclick = () => { photoView = b.dataset.v; showPhotos(0); }; });
   const pv = body.querySelector('#pv');
   const newBtn = () => { const row = document.createElement('div'); row.className = 'prow'; row.innerHTML = `<button class="pbtn">📷 take a new one</button>`; row.firstChild.onclick = () => { closeModal('box'); openCam(); }; pv.appendChild(row); };
@@ -1632,18 +1781,19 @@ window.addEventListener('sync:items', e => {
   const forMe = added.filter(it => it.from && it.from !== who);
   if (forMe.length){
     const it = forMe[0], n = nameOf(it.from);
-    toast({ letters: `💌 new letter from ${n}!`, photos: `📸 ${n} posted a photo!`, voice: `🎧 voice note from ${n}!` }[kind], 3500);
+    toast(it.type === 'journal' ? `📔 ${n} wrote in their journal!` : { letters: `💌 new letter from ${n}!`, photos: `📸 ${n} posted a photo!`, voice: `🎧 voice note from ${n}!` }[kind], 3500);
     boop(880, .1, 'sine', .06, 1.5); setTimeout(() => boop(1320, .15, 'sine', .05, 1.2), 140);
     pets.forEach(q => { q.happyT = 2; q.vy = -50; q.jy = -1; });
   }
   updateBadge();
-  if ($('box').classList.contains('show') && boxTab === kind && !$('boxBody').querySelector('.paper,.compose,.locket')) showTab(kind);
+  const tabNow = kind === 'letters' && boxTab === 'journal' ? 'journal' : kind;
+  if ($('box').classList.contains('show') && boxTab === tabNow && !$('boxBody').querySelector('.paper,.compose,.locket,.page')) showTab(tabNow);
 });
 window.addEventListener('sync:state', e => {
   const st = e.detail;
   if (!st || st.ts < stateTs){ if (stateTs) pushState(); return; }   // ours is newer (or nothing shared yet)
   if (st.by === deviceId || st.ts === stateTs) return;
-  (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name; Object.assign(chars[i].stats, c.stats || {}); } });
+  (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name === 'Me' ? 'Haze' : c.name; Object.assign(chars[i].stats, c.stats || {}); } });
   if (typeof st.love === 'number') love = st.love;
   (st.pets || []).forEach((p2, i) => { if (pets[i]){ if (p2.name) pets[i].name = ({ Mochi: 'Molly', Sunny: 'Shiro' })[p2.name] || p2.name; Object.assign(pets[i].stats, p2.stats || {}); } });
   if (st.frames && typeof st.frames === 'object'){ frameAssign = st.frames; store('riri-frames', frameAssign); drawBG(); }

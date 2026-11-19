@@ -104,6 +104,8 @@ function ui(){
   #gpad button{width:64px; height:64px; border-radius:50%; border:3px solid #fff; background:rgba(255,255,255,.35); color:#fff; font-size:26px; font-weight:700; touch-action:none; -webkit-user-select:none; user-select:none}
   #gpad button.on{background:rgba(255,255,255,.7); color:#4a2a35}
   #gpad .l{display:flex; gap:12px}
+  .gcard,.gbtn,#gtop button{border-radius:0 !important; clip-path:polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px)); box-shadow:none !important; border-bottom:5px solid rgba(0,0,0,.25) !important}
+  #gwrap{border-radius:0 !important}
   #ghint{position:absolute; left:0; right:0; bottom:12px; text-align:center; color:#fff; font-size:13px; text-shadow:0 1px 2px #000; pointer-events:none}
   `;
   document.head.appendChild(css);
@@ -142,10 +144,12 @@ function ui(){
     const k = map[e.key]; if (k) keys[k] = false;
   });
 }
+let lastScore = null;
+function setScore(v){ if (v !== lastScore){ lastScore = v; $('gscore').textContent = v; } }
 const keys = { left: false, right: false, jump: false, jumpHit: false };
 function open(){ ui(); $('gmodal').classList.add('show'); menu(); }
 function close(){ stop(); $('gmodal').classList.remove('show'); }
-function stop(){ cancelAnimationFrame(raf); raf = 0; cur = null; $('gpad').classList.remove('show'); $('ghint').textContent = ''; $('gover').style.display = 'none'; $('gscore').textContent = ''; }
+function stop(){ cancelAnimationFrame(raf); raf = 0; cur = null; lastScore = null; $('gpad').classList.remove('show'); $('ghint').textContent = ''; $('gover').style.display = 'none'; $('gscore').textContent = ''; }
 function menu(){
   stop();
   const h = host(), me = h.who();
@@ -247,7 +251,7 @@ const Dash = { id: 'dash', title: '🍒 Cherry Dash', bestKey: 'best-dash',
         return true;
       });
       S.sparks.forEach(s => { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 200 * dt; s.t -= dt; }); S.sparks = S.sparks.filter(s => s.t > 0);
-      $('gscore').textContent = `${r(S.d) + S.cherries * 10}`;
+      setScore(`${r(S.d) + S.cherries * 10}`);
     };
     S.draw = () => {
       P = ctx; ctx.save();
@@ -411,7 +415,7 @@ const Quest = { id: 'quest', title: '💖 Heart Quest', bestKey: 'best-quest',
       // finish
       if (finish && pl.x + pl.w > finish.x - 4){ S.won = .001; pl.vx = 0; host().boop(660, .15, 'sine', .06, 1.5); setTimeout(() => host().boop(990, .25, 'sine', .06, 1.5), 160); }
       S.cam += (Math.max(0, Math.min(COLS * T - W, pl.x - 70)) - S.cam) * Math.min(1, dt * 8);
-      $('gscore').textContent = `🍒${S.hearts} ${'❤'.repeat(Math.max(0, S.lives))}`;
+      setScore(`🍒${S.hearts} ${'❤'.repeat(Math.max(0, S.lives))}`);
     };
     S.draw = () => {
       P = ctx; ctx.imageSmoothingEnabled = false;

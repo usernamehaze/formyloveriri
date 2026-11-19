@@ -1,4 +1,4 @@
-# Riri & Me 💕
+# Riri & Haze 💕
 
 A little pixel-art pet game for Riri. Play it at **https://usernamehaze.github.io/formyloveriri/**
 
