@@ -104,7 +104,7 @@ function bake(name){
 const url = name => urls[name] || (urls[name] = bake(name).toDataURL());
 const RE = /\p{Extended_Pictographic}(\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
 const KEEP = /^[◀▶©®™↩↪↔↕⬅➡⬆⬇▪▫◻◼]/;
-const nameFor = e => EMO[e.replace(/[️‍]/g, '')] || EMO[[...e][0]] || 'sparkle';
+const nameFor = e => !e ? 'sparkle' : EMO[e.replace(/[️‍]/g, '')] || EMO[[...e][0]] || 'sparkle';
 function html(name, cls){ return `<img class="pxi${cls ? ' ' + cls : ''}" alt="" src="${url(name)}">`; }
 const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'TITLE', 'OPTION', 'CANVAS']);
 function swapText(node){
@@ -118,7 +118,7 @@ function swapText(node){
     last = m.index + m[0].length;
   }
   if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
-  node.parentNode.replaceChild(frag, node);
+  if (node.parentNode) node.parentNode.replaceChild(frag, node);
 }
 function walk(root){
   if (root.nodeType === 3){ if (root.parentNode && !SKIP.has(root.parentNode.nodeName)) swapText(root); return; }
@@ -129,7 +129,7 @@ function walk(root){
 }
 function start(){
   walk(document.body);
-  new MutationObserver(ms => ms.forEach(m => { if (m.type === 'characterData') walk(m.target); else m.addedNodes.forEach(walk); }))
+  new MutationObserver(ms => { try { ms.forEach(m => { if (m.type === 'characterData') walk(m.target); else m.addedNodes.forEach(walk); }); } catch(e){ console.warn('icons', e); } })
     .observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);

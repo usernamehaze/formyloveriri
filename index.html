@@ -335,16 +335,20 @@
 <script>
   // if anything breaks, show it on screen instead of silently freezing
   window.addEventListener('error', e => {
+    const msg = e.message || '';
+    if (!msg || /^Script error\.?$/.test(msg) || /ResizeObserver/.test(msg)) return;   // browser noise, not the game
     const t = document.getElementById('toast'); if (!t) return;
-    t.textContent = '⚠️ ' + (e.message || 'something broke'); t.classList.add('show');
+    const where = e.filename ? ' (' + e.filename.split('/').pop().split('?')[0] + ':' + e.lineno + ')' : '';
+    t.textContent = '⚠ ' + msg + where; t.classList.add('show');
+    clearTimeout(window.__errT); window.__errT = setTimeout(() => t.classList.remove('show'), 7000);
   });
 </script>
-<script src="sync-config.js"></script>
-<script src="content.js"></script>
-<script src="js/icons.js"></script>
-<script src="js/people.js"></script>
-<script src="js/rooms.js"></script>
-<script src="js/games.js"></script>
+<script src="sync-config.js?v=20261120a"></script>
+<script src="content.js?v=20261120a"></script>
+<script src="js/icons.js?v=20261120a"></script>
+<script src="js/people.js?v=20261120a"></script>
+<script src="js/rooms.js?v=20261120a"></script>
+<script src="js/games.js?v=20261120a"></script>
 <script>
 (() => {
 'use strict';
@@ -364,6 +368,7 @@ function fetchStore(k, d){ try { const v = JSON.parse(localStorage.getItem(k) ||
 let P = ctx;
 function pa(x, y, w, h, c){ P.fillStyle = c; P.fillRect(Math.round(x), Math.round(y), w, h); }
 function drawEmo(e, x, y){
+  if (!e) return;
   const c = window.PixelIcons && PixelIcons.canvasFor(e);
   if (c){ ctx.imageSmoothingEnabled = false; ctx.drawImage(c, Math.round(x - 7), Math.round(y - 7)); }
   else { ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, Math.round(x), Math.round(y)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
@@ -1373,22 +1378,33 @@ function showLetter(l){
 }
 function showCompose(){
   const body = $('boxBody'); body.scrollTop = 0;
-  let from = myId();
+  let to = who ? (who === 'riri' ? 'me' : 'riri') : null;
   body.innerHTML = `<div class="compose">
-      <div class="chips"><button class="chip" data-w="riri">from ${esc(chars[0].name)}</button><button class="chip" data-w="me">from ${esc(chars[1].name)}</button></div>
+      <div class="lbl">who is this letter for?</div>
+      <div class="chips"><button class="chip" data-to="riri">💌 to ${esc(chars[0].name)}</button><button class="chip" data-to="me">💌 to ${esc(chars[1].name)}</button></div>
+      <div class="lbl" id="cFromTo"></div>
       <input id="cTitle" maxlength="40" placeholder="title…">
       <textarea id="cBody" placeholder="dear …"></textarea>
     </div>
     <div class="prow"><button class="pbtn ghost" id="cBack">← back</button><button class="pbtn" id="cSave">💌 seal it</button></div>
     <div class="hint">${synced() ? 'it will show up on both of your phones 💕' : 'sealed letters are saved on this phone. tap 🔗 at the top to sync your phones, or tap <b>send</b> next to text it 💕'}</div>`;
-  const chips = body.querySelectorAll('.chip');
-  const setFrom = id => { from = id; chips.forEach(c => c.classList.toggle('on', c.dataset.w === id)); };
-  chips.forEach(c => c.onclick = () => setFrom(c.dataset.w)); setFrom(from);
+  const chips = body.querySelectorAll('[data-to]');
+  const setTo = id => {
+    to = id; chips.forEach(c => c.classList.toggle('on', c.dataset.to === id));
+    const from = id === 'riri' ? 'me' : 'riri';
+    $('cFromTo').textContent = `from ${nameOf(from)} → to ${nameOf(id)}`;
+    $('cBody').placeholder = `dear ${nameOf(id)}…`;
+  };
+  chips.forEach(c => c.onclick = () => setTo(c.dataset.to));
+  if (to) setTo(to); else $('cFromTo').textContent = 'tap who it\'s for 💕';
   $('cBack').onclick = () => showTab('letters');
   $('cSave').onclick = () => {
     const title = $('cTitle').value.trim(), text = $('cBody').value.trim();
+    if (!to) return toast('pick who it\'s for first 💌');
     if (!text) return toast('write something first ✍️');
-    const l = { date: today(), ts: Date.now(), from, to: from === 'riri' ? 'me' : 'riri', title: title || 'a little letter', body: text, local: true };
+    const from = to === 'riri' ? 'me' : 'riri';
+    if (!who){ who = from; store('riri-who', who); setTimeout(() => toast(`this phone is now ${nameOf(who)}'s 💕 (change it in 🔗)`, 3500), 1200); }
+    const l = { date: today(), ts: Date.now(), from, to, title: title || 'a little letter', body: text, local: true };
     addItem('letters', l);
     seen.add(ikey('letters', l)); store('riri-seen', [...seen]); updateBadge();
     boop(520, .15, 'sine', .05, 2);
@@ -1642,7 +1658,7 @@ function showShot(data){
   const body = $('camBody');
   let from = myId();
   body.innerHTML = `<div class="locket"><img alt=""><input class="cap" id="shotCap" maxlength="40" placeholder="add a message…"></div>
-    <div class="chips" style="margin-top:12px"><button class="chip" data-w="riri">from ${esc(chars[0].name)}</button><button class="chip" data-w="me">from ${esc(chars[1].name)}</button></div>
+    <div class="chips" style="margin-top:12px"><button class="chip" data-w="riri">taken by ${esc(chars[0].name)}</button><button class="chip" data-w="me">taken by ${esc(chars[1].name)}</button></div>
     <div class="compose"><textarea id="shJournal" style="height:96px" placeholder="📔 journal: what are we doing today?"></textarea></div>
     <div class="prow"><button class="pbtn ghost" id="shRetake">↺</button><button class="pbtn" id="shSave">💛 add to our locket</button></div>`;
   body.querySelector('img').src = data;
@@ -1815,6 +1831,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
 requestAnimationFrame(frame);
 })();
 </script>
-<script type="module" src="sync.js"></script>
+<script type="module" src="sync.js?v=20261120a"></script>
 </body>
 </html>
