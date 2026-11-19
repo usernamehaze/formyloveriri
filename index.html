@@ -1402,7 +1402,7 @@ function showCompose(){
 }
 
 // ---------- 📔 journal books: one for each of you, both can read both ----------
-const BOOKS = { riri: { c1: '#ffb3c6', c2: '#e77f9c', icon: '🎀' }, me: { c1: '#a9c8ee', c2: '#6f9bd6', icon: '👓' } };
+const BOOKS = { riri: { c1: '#ffb3c6', c2: '#e77f9c', icon: '🎀' }, me: { c1: '#ff8a8a', c2: '#d33a3a', icon: '👓' } };
 const canWrite = owner => !who || who === owner;
 function pagesOf(owner){
   const pages = lists.journal().filter(p => p.from === owner).map(p => ({ kind: 'page', it: p, date: p.date, ts: p.ts || 0 }));
