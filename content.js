@@ -6,7 +6,7 @@
 // Dates are YYYY-MM-DD.  from / to are 'me' or 'riri'.
 
 window.LOVE = {
-  pets: { cat: 'Mochi', dog: 'Sunny' },
+  pets: { cat: 'Molly', dog: 'Shiro' },
 
   // what you call each other (used in their speech bubbles)
   nicknames: {
@@ -37,6 +37,8 @@ You make every day feel like the best day ever. I love you so much.`,
   ],
 
   photos: [
-    { date: '2026-11-19', from: 'me', caption: 'us 🍒👍', src: 'photos/us.jpg' },
+    // featured: true = the photo every frame shows unless you pick another one
+    { date: '2026-11-19', from: 'me', caption: 'us 🍒👍', src: 'photos/us-together.jpg', featured: true,
+      journal: 'our first picture in our little world 💕' },
   ],
 };

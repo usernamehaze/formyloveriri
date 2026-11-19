@@ -3,15 +3,15 @@
 A little pixel-art pet game for Riri. Play it at **https://usernamehaze.github.io/formyloveriri/**
 
 ## In the game
-- **🏡 Rooms:** outside the house, living room, kitchen, bedroom, bathroom and the 🐾 fur babies room. Feed takes you to the kitchen, Sleep to the bedroom and Bath to the bathroom.
+- **🏠 Home:** tap Home at the bottom to pick a room (outside, living room, kitchen, bedroom, CR, fur babies). Each room has its own actions: feed in the kitchen, sleep in the bedroom, bath in the CR, pet care in the fur babies room.
 - **🖼️ Frames:** tap any frame on a wall to choose which photo goes in it (or from 📸 Photos → "put in a frame"). Synced between your phones.
-- **🐾 Fur babies room:** Mochi & Sunny have their own stats. Feed (bowls), play (ball / yarn), bath, nap, hug, and talk (they repeat you in a squeaky voice).
+- **🐾 Fur babies room:** Molly & Shiro have their own stats. Feed (bowls), play (ball / yarn), bath, nap, hug, and talk (they repeat you in a squeaky voice).
 - **📱 Home screen:** in Safari tap Share → *Add to Home Screen* to get the pixel app icon and open it full screen.
 - **🎮 Play:** two games. **🍒 Cherry Dash** is a 3-lane runner (swipe ← → to switch lanes, ↑ jump, ↓ slide), and **💖 Heart Quest** is a platformer where you run, jump and stomp bugs to reach your partner at the end.
 - **Poses:** tap them, hug (they walk together and embrace), sleep (they share a bed), bath (bubble tub), and feed (they hold the food).
-- **📷 Camera (top right):** snap what you're doing. It goes on the polaroid on the wall, like Locket. Tap **send** to text it to your person.
+- **📷 Camera (bottom bar):** snap what you are doing and write a journal entry. Photos live in 💌 → 📸 Photos as a locket and a 📔 journal; you can edit or delete them.
 - **💌 Letters:** every letter is an envelope (blue = from Me, pink = from Riri). Tap to open it and have the sender read it out loud. **✍️ write a letter** seals a new one.
-- **🐱 Mochi & 🐶 Sunny:** tap them to pet them. Rename them in `content.js` (`pets:`).
+- **🐱 Molly (Persian) & 🐶 Shiro (Great Pyrenees):** tap them to pet them. Rename them in `content.js` (`pets:`).
 
 Letters and photos made *inside* the game are saved on that phone. To put one in the game for **both** of you,
 add it to `content.js` (below), or send it to the person who updates the repo.

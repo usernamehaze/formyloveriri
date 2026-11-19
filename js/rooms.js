@@ -15,7 +15,7 @@ const ROOMS = [
   { id: 'living',   icon: '🛋️', name: 'living room' },
   { id: 'kitchen',  icon: '🍳', name: 'kitchen' },
   { id: 'bedroom',  icon: '🛏️', name: 'bedroom' },
-  { id: 'bathroom', icon: '🛁', name: 'bathroom' },
+  { id: 'bathroom', icon: '🛁', name: 'CR · bath' },
   { id: 'pets',     icon: '🐾', name: 'fur babies' },
 ];
 const FRAMES = {

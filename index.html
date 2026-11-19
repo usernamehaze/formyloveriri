@@ -37,9 +37,24 @@
   .love{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600}
   .love .bar{width:84px}
   .tabs{display:flex; gap:6px}
-  .roombar{display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
-  .roombar button{border:2px solid var(--line); background:var(--panel); border-radius:10px; font-size:17px; padding:3px 0; cursor:pointer; line-height:1.2}
-  .roombar button.on{background:#ffe9a8; border-color:#e8b744; box-shadow:0 2px 0 #e8b744}
+  .roombar{display:none; grid-template-columns:repeat(3,1fr); gap:6px; background:var(--panel); border:2px solid #e8b744; border-radius:14px; padding:8px; animation:up .18s ease-out}
+  .roombar.show{display:grid}
+  .roombar button{border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:12px; padding:6px 0 5px; cursor:pointer; font:inherit; font-size:12px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:2px}
+  .roombar button b{font-size:22px; font-weight:400; line-height:1.1}
+  .roombar button.on{background:#ffe9a8; border-color:#e8b744; box-shadow:0 2px 0 #e8b744; color:#4a2a35}
+  .roomacts{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; min-height:34px}
+  .roomacts button{border:2px solid var(--bd, var(--line)); background:var(--bc, var(--panel)); color:#4a2a35; border-radius:18px; padding:5px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 0 var(--bd, var(--line))}
+  .roomacts button.on{background:var(--bd); color:#fff}
+  .roomacts .rname{align-self:center; font-size:12px; color:var(--muted); margin-right:2px}
+  [data-act="home"]{--bc:#ffe9a8; --bd:#e8b744}
+  [data-act="cam"]{--bc:#e3efff; --bd:#86aee0}
+  .jcard{width:100%; display:flex; gap:10px; text-align:left; border:2px solid var(--line); background:#fffdf6; color:#4a2a35; border-radius:14px; padding:8px; margin-bottom:10px; font:inherit; cursor:pointer; box-shadow:0 3px 0 #ead9c2}
+  .jcard img{width:76px; height:76px; border-radius:12px; object-fit:cover; flex:none}
+  .jcard .jd{font-size:11px; color:#b0808e} .jcard b{display:block; font-size:15px; margin:1px 0 3px}
+  .jcard p{margin:0; font-family:Caveat, cursive; font-size:19px; line-height:1.15; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+  .jtext{background:#fffdf6; color:#4a2a35; border-radius:10px; padding:10px 12px; font-family:Caveat, cursive; font-size:21px; line-height:1.25; white-space:pre-wrap; border-left:4px solid #f6c34a; margin:4px 0 10px; box-shadow:0 2px 0 #ead9c2}
+  .jtext.empty2{color:#b0a0a6; font-size:18px}
+  .pbtn.danger{background:#fff; color:#d9435a; border-color:#f3b5bf; flex:0 0 auto}
   .fgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
   .fgrid button{aspect-ratio:1; border-radius:12px; border:3px solid var(--line); padding:0; overflow:hidden; cursor:pointer; background:var(--bg); font:inherit; font-size:12px; color:var(--ink)}
   .fgrid button.on{border-color:#f6c34a}
@@ -71,7 +86,7 @@
   #camBtn{position:absolute; right:8px; top:8px; width:46px; height:46px; border-radius:50%; border:3px solid #4a2a35; background:#fff; font-size:22px; cursor:pointer; z-index:4;
           box-shadow:0 3px 0 rgba(74,42,53,.3); display:grid; place-items:center; padding:0}
   #camBtn:active{transform:translateY(2px)}
-  .actions{display:grid; grid-template-columns:repeat(7,1fr); gap:5px}
+  .actions{display:grid; grid-template-columns:repeat(6,1fr); gap:6px}
   .btn{position:relative; border:2px solid var(--line); background:var(--panel); color:var(--ink); border-radius:12px; padding:6px 0 4px; font:inherit; font-size:11px; font-weight:600;
        display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; box-shadow:0 3px 0 var(--line); transition:transform .08s}
   .btn b{font-size:20px; line-height:1.1; font-weight:400}
@@ -202,25 +217,24 @@
     <div class="stat"><span class="ic">⚡</span><div class="bar"><i id="s-energy" style="background-color:var(--energy)"></i></div></div>
     <div class="stat"><span class="ic">🫧</span><div class="bar"><i id="s-clean" style="background-color:var(--clean)"></i></div></div>
   </div>
-  <div class="roombar" id="roomBar"></div>
   <div id="stage">
     <div id="wrap">
       <canvas id="bgc" width="180" height="260"></canvas>
       <canvas id="fx" width="180" height="260"></canvas>
-      <button id="camBtn" aria-label="Camera">📷</button>
       <div id="toast"></div>
       <div id="gamehud"><span id="gScore">🍒 0</span><span id="gTime">20</span></div>
       <div id="tray">
       </div>
     </div>
   </div>
+  <div class="roomacts" id="roomActs"></div>
+  <div class="roombar" id="roomBar"></div>
   <div class="actions">
-    <button class="btn" data-act="feed"><b>🍒</b>Feed</button>
+    <button class="btn" data-act="home"><b>🏠</b>Home</button>
     <button class="btn" data-act="play"><b>🎮</b>Play</button>
-    <button class="btn" data-act="bath"><b>🫧</b>Bath</button>
-    <button class="btn" data-act="sleep"><b>💤</b>Sleep</button>
     <button class="btn" data-act="talk"><b>🎤</b>Talk</button>
     <button class="btn" data-act="hug"><b>💕</b>Hug</button>
+    <button class="btn" data-act="cam"><b>📷</b>Camera</button>
     <button class="btn" data-act="box"><b>💌</b>Letters<span class="dot" id="boxDot"></span></button>
   </div>
 </div>
@@ -347,54 +361,70 @@ const lctx = layer.getContext('2d');
 // ---------- pets ----------
 const PETN = LOVE.pets || {};
 const pets = [
-  { id:'cat', kind:'pet', name: PETN.cat || 'Mochi', cx:17, w:22, h:24, jy:0, vy:0, happyT:0, blink:0, nb:3, sleepy:false,
+  { id:'cat', kind:'pet', name: PETN.cat || 'Molly', cx:17, w:22, h:24, jy:0, vy:0, happyT:0, blink:0, nb:3, sleepy:false,
     lines:['meow~ 🐱','mrrp?','*purrs*','feed me 🐟','meow meow 💕','*headbutts you*'], snd:[900, 1.5] },
-  { id:'dog', kind:'pet', name: PETN.dog || 'Sunny', cx:162, w:30, h:30, jy:0, vy:0, happyT:0, blink:0, nb:2, sleepy:false,
+  { id:'dog', kind:'pet', name: PETN.dog || 'Shiro', cx:162, w:30, h:30, jy:0, vy:0, happyT:0, blink:0, nb:2, sleepy:false,
     lines:['woof! 🐾','*wags tail*','ball?? 🎾','i love you guys!','*happy zoomies*','arf arf 💛'], snd:[330, .6] },
 ];
 const petCanvas = document.createElement('canvas'); petCanvas.width = 34; petCanvas.height = 34;
 const pctx = petCanvas.getContext('2d');
 const DK = '#2b1a14';
+// Molly: a fluffy white Persian with a flat face and copper eyes
 function drawCat(q, t){
-  const O = '#f2a65a', OD = '#d9853a', Wh = '#fff4e6', PK = '#f7a1b3';
+  const Wt = '#ffffff', W2 = '#eee8e4', W3 = '#d9d0ca', PK = '#f7b3c2';
   P = pctx; const ox = 6, oy = 8;
   const tw = Math.round(Math.sin(t * 3) * 1.5);
-  pa(ox + 16, oy + 17, 3, 3, O); pa(ox + 18 + tw, oy + 12, 2, 6, O); pa(ox + 18 + tw, oy + 10, 2, 2, OD);
-  pa(ox + 4, oy + 12, 12, 10, O); pa(ox + 3, oy + 15, 14, 7, O); pa(ox + 7, oy + 12, 6, 8, Wh);
-  pa(ox + 5, oy + 20, 4, 2, Wh); pa(ox + 11, oy + 20, 4, 2, Wh); pa(ox + 4, oy + 17, 1, 2, OD); pa(ox + 15, oy + 17, 1, 2, OD);
-  pa(ox + 3, oy, 3, 1, O); pa(ox + 2, oy + 1, 5, 2, O); pa(ox + 14, oy, 3, 1, O); pa(ox + 13, oy + 1, 5, 2, O);
-  pa(ox + 4, oy + 1, 1, 2, PK); pa(ox + 15, oy + 1, 1, 2, PK);
-  pa(ox + 2, oy + 3, 16, 9, O); pa(ox + 1, oy + 5, 18, 6, O); pa(ox + 6, oy + 8, 8, 4, Wh);
-  pa(ox + 9, oy + 3, 2, 2, OD); pa(ox + 6, oy + 4, 1, 2, OD); pa(ox + 13, oy + 4, 1, 2, OD);
+  // big plume tail
+  pa(ox + 16, oy + 13, 4, 7, W2); pa(ox + 18 + tw, oy + 8, 4, 7, Wt); pa(ox + 19 + tw, oy + 6, 3, 3, W2);
+  // round fluffy body
+  pa(ox + 2, oy + 12, 16, 10, Wt); pa(ox + 1, oy + 14, 18, 8, Wt); pa(ox + 2, oy + 20, 16, 2, W2);
+  pa(ox + 0, oy + 15, 1, 4, Wt); pa(ox + 19, oy + 16, 1, 3, Wt);
+  pa(ox + 5, oy + 11, 10, 8, Wt); pa(ox + 6, oy + 17, 2, 1, W3); pa(ox + 12, oy + 17, 2, 1, W3);
+  pa(ox + 5, oy + 21, 4, 2, Wt); pa(ox + 11, oy + 21, 4, 2, Wt); pa(ox + 6, oy + 22, 1, 1, W3); pa(ox + 12, oy + 22, 1, 1, W3);
+  // collar with a little bell
+  pa(ox + 5, oy + 11, 10, 1, '#ff7aa8'); pa(ox + 9, oy + 12, 2, 2, '#f6c34a');
+  // round flat-faced head with cheek fluff
+  pa(ox + 1, oy + 2, 18, 10, Wt); pa(ox, oy + 4, 20, 6, Wt); pa(ox - 1, oy + 6, 2, 4, Wt); pa(ox + 19, oy + 6, 2, 4, Wt);
+  pa(ox + 3, oy + 11, 14, 1, W2); pa(ox + 7, oy + 1, 6, 1, Wt);
+  pa(ox + 2, oy, 4, 3, Wt); pa(ox + 3, oy + 1, 2, 1, PK); pa(ox + 14, oy, 4, 3, Wt); pa(ox + 15, oy + 1, 2, 1, PK);
   const closed = q.sleepy || q.blink > 0, happy = q.happyT > 0;
-  [ox + 5, ox + 13].forEach(x => {
-    if (happy){ pa(x, oy + 7, 1, 1, DK); pa(x + 1, oy + 6, 1, 1, DK); pa(x + 2, oy + 7, 1, 1, DK); }
-    else if (closed) pa(x, oy + 7, 3, 1, DK);
-    else { pa(x, oy + 6, 2, 2, DK); pa(x, oy + 6, 1, 1, '#9fd36a'); }
+  [ox + 3, ox + 12].forEach(x => {
+    if (happy){ pa(x, oy + 6, 1, 1, DK); pa(x + 1, oy + 5, 3, 1, DK); pa(x + 4, oy + 6, 1, 1, DK); }
+    else if (closed) pa(x, oy + 6, 5, 1, DK);
+    else { pa(x, oy + 4, 5, 4, '#d9933a'); pa(x + 2, oy + 4, 1, 4, DK); pa(x, oy + 4, 1, 1, '#fff'); pa(x, oy + 4, 5, 1, '#b8742c'); }
   });
-  pa(ox + 9, oy + 8, 2, 1, PK); pa(ox + 8, oy + 10, 1, 1, DK); pa(ox + 11, oy + 10, 1, 1, DK); pa(ox + 9, oy + 11, 2, 1, DK);
-  pa(ox + 3, oy + 9, 3, 1, 'rgba(240,120,130,.5)'); pa(ox + 14, oy + 9, 3, 1, 'rgba(240,120,130,.5)');
+  pa(ox + 9, oy + 8, 2, 1, PK); pa(ox + 8, oy + 9, 1, 1, W3); pa(ox + 11, oy + 9, 1, 1, W3); pa(ox + 9, oy + 10, 2, 1, W3);
+  pa(ox + 2, oy + 8, 3, 1, 'rgba(240,120,140,.45)'); pa(ox + 15, oy + 8, 3, 1, 'rgba(240,120,140,.45)');
+  pa(ox - 2, oy + 8, 3, 1, W3); pa(ox + 19, oy + 8, 3, 1, W3);
 }
+// Shiro: a big fluffy white Great Pyrenees with cream ears
 function drawDog(q, t){
-  const G = '#e3a24c', GD = '#c4843a', GL = '#f5c983';
-  P = pctx; const ox = 2, oy = 4;
+  const Wt = '#ffffff', W2 = '#efe9e2', W3 = '#ddd2c6', CR = '#efe0c6', CR2 = '#e2cda9';
+  P = pctx; const ox = 2, oy = 3;
   const wag = Math.sin(t * (q.happyT > 0 ? 24 : 9)) > 0 ? -2 : 1;
-  pa(ox + 24, oy + 18 + wag, 3, 2, G); pa(ox + 26, oy + 15 + wag, 2, 4, G); pa(ox + 27, oy + 13 + wag, 2, 3, GL);
-  pa(ox + 3, oy + 19, 6, 9, G); pa(ox + 19, oy + 19, 6, 9, G);
-  pa(ox + 6, oy + 13, 16, 13, G); pa(ox + 10, oy + 13, 8, 9, GL);
-  pa(ox + 8, oy + 21, 4, 6, G); pa(ox + 16, oy + 21, 4, 6, G); pa(ox + 7, oy + 26, 5, 2, GL); pa(ox + 16, oy + 26, 5, 2, GL);
-  pa(ox + 7, oy + 13, 14, 2, '#e0446a'); pa(ox + 13, oy + 15, 2, 2, '#f6c34a');
-  pa(ox + 6, oy + 1, 16, 12, G); pa(ox + 5, oy + 3, 18, 9, G); pa(ox + 11, oy + 1, 6, 1, GL);
-  pa(ox + 2, oy + 4, 5, 10, GD); pa(ox + 21, oy + 4, 5, 10, GD); pa(ox + 3, oy + 13, 3, 2, GD); pa(ox + 22, oy + 13, 3, 2, GD);
-  pa(ox + 10, oy + 8, 8, 5, GL); pa(ox + 12, oy + 8, 4, 2, DK); pa(ox + 13, oy + 8, 1, 1, '#6b5a55');
-  pa(ox + 13, oy + 11, 2, 1, DK);
-  if (!q.sleepy){ pa(ox + 13, oy + 12, 3, 3, '#ef7d8f'); pa(ox + 14, oy + 13, 1, 1, '#d9607a'); }
+  // plumed tail
+  pa(ox + 24, oy + 14 + wag, 4, 8, W2); pa(ox + 26, oy + 10 + wag, 4, 6, Wt); pa(ox + 27, oy + 8 + wag, 3, 3, W2);
+  // body & fluffy haunches
+  pa(ox + 3, oy + 19, 7, 10, W2); pa(ox + 19, oy + 19, 7, 10, W2);
+  pa(ox + 5, oy + 13, 19, 14, Wt); pa(ox + 4, oy + 16, 1, 6, Wt); pa(ox + 24, oy + 16, 1, 6, Wt);
+  pa(ox + 8, oy + 12, 13, 10, Wt); pa(ox + 7, oy + 21, 15, 1, W2); for (let i = 0; i < 4; i++) pa(ox + 9 + i * 3, oy + 18, 1, 2, W3);
+  pa(ox + 9, oy + 22, 4, 6, Wt); pa(ox + 16, oy + 22, 4, 6, Wt); pa(ox + 8, oy + 27, 6, 2, Wt); pa(ox + 15, oy + 27, 6, 2, Wt);
+  pa(ox + 10, oy + 28, 1, 1, W3); pa(ox + 12, oy + 28, 1, 1, W3); pa(ox + 17, oy + 28, 1, 1, W3); pa(ox + 19, oy + 28, 1, 1, W3);
+  pa(ox + 7, oy + 12, 15, 2, '#7cc3f0'); pa(ox + 13, oy + 14, 2, 2, '#f6c34a');
+  // head with floppy cream ears
+  pa(ox + 6, oy, 17, 12, Wt); pa(ox + 5, oy + 2, 19, 9, Wt); pa(ox + 9, oy - 1, 11, 1, Wt);
+  pa(ox + 2, oy + 3, 5, 9, CR); pa(ox + 22, oy + 3, 5, 9, CR); pa(ox + 3, oy + 10, 3, 2, CR2); pa(ox + 23, oy + 10, 3, 2, CR2);
+  pa(ox + 10, oy + 7, 9, 6, Wt); pa(ox + 10, oy + 12, 9, 1, W2);
+  pa(ox + 13, oy + 7, 3, 2, DK); pa(ox + 14, oy + 7, 1, 1, '#6b5a55');
+  pa(ox + 14, oy + 10, 1, 1, DK); pa(ox + 12, oy + 11, 2, 1, DK); pa(ox + 15, oy + 11, 2, 1, DK);
+  if (!q.sleepy && q.happyT > 0){ pa(ox + 13, oy + 12, 3, 3, '#ef7d8f'); pa(ox + 14, oy + 13, 1, 1, '#d9607a'); }
   const closed = q.sleepy || q.blink > 0, happy = q.happyT > 0;
-  [ox + 9, ox + 17].forEach(x => {
-    if (happy){ pa(x - 1, oy + 6, 1, 1, DK); pa(x, oy + 5, 2, 1, DK); pa(x + 2, oy + 6, 1, 1, DK); }
-    else if (closed) pa(x - 1, oy + 6, 3, 1, DK);
-    else { pa(x, oy + 5, 2, 2, DK); pa(x, oy + 5, 1, 1, '#fff'); }
+  [ox + 9, ox + 18].forEach(x => {
+    if (happy){ pa(x - 1, oy + 5, 1, 1, DK); pa(x, oy + 4, 2, 1, DK); pa(x + 2, oy + 5, 1, 1, DK); }
+    else if (closed) pa(x - 1, oy + 5, 3, 1, DK);
+    else { pa(x, oy + 4, 2, 2, DK); pa(x, oy + 4, 1, 1, '#fff'); }
   });
+  pa(ox + 8, oy + 2, 3, 1, W3); pa(ox + 18, oy + 2, 3, 1, W3);
 }
 pets[0].draw = drawCat; pets[1].draw = drawDog;
 Object.assign(pets[0], { pitch: 1.9, home: 56, napX: 26, napY: 187, bowlX: 77, toy: '🧶', s: 1, stats: { hunger: 80, fun: 80, energy: 85, clean: 90 } });
@@ -494,7 +524,8 @@ function load(){
   const d = fetchStore('riri-pet', null); if (!d) return;
   (d.chars || []).forEach((s, i) => { if (chars[i]){ chars[i].name = s.name || chars[i].name; Object.assign(chars[i].stats, s.stats); } });
   love = d.love ?? love; stateTs = d.actionTs || 0;
-  (d.pets || []).forEach((s, i) => { if (pets[i]){ pets[i].name = s.name || pets[i].name; Object.assign(pets[i].stats, s.stats || {}); } });
+  const OLD = { Mochi: 'Molly', Sunny: 'Shiro' };
+  (d.pets || []).forEach((s, i) => { if (pets[i]){ pets[i].name = OLD[s.name] || s.name || pets[i].name; Object.assign(pets[i].stats, s.stats || {}); } });
   decay(Math.min((Date.now() - (d.ts || Date.now())) / 1000, 12 * 3600) * .5);
 }
 function decay(dt){
@@ -535,7 +566,8 @@ function imgFor(src){
 const photoRef = ph => ph.id || ph.src;
 function photoForFrame(fid){
   const all = lists.photos(), ref = frameAssign[fid];
-  const ph = (ref && all.find(p => photoRef(p) === ref)) || all[0];
+  const featured = all.find(p => p.featured) || all[all.length - 1];
+  const ph = ref === 'newest' ? all[0] : ((ref && all.find(p => photoRef(p) === ref)) || featured);
   return ph ? imgFor(ph.src) : null;
 }
 const isNight = () => { const h = new Date().getHours(); return sleeping || h >= 19 || h < 6; };
@@ -553,10 +585,44 @@ function setRoom(id){
 function renderRooms(){
   const bar = $('roomBar'); bar.innerHTML = '';
   Rooms.ROOMS.forEach(rm => {
-    const b = document.createElement('button'); b.textContent = rm.icon; b.title = rm.name; b.className = rm.id === room ? 'on' : '';
-    b.onclick = () => { if (busy() && rm.id !== room) return toast('not right now!'); setRoom(rm.id); };
+    const b = document.createElement('button'); b.innerHTML = `<b>${rm.icon}</b>${esc(rm.name)}`; b.className = rm.id === room ? 'on' : '';
+    b.onclick = () => { if (busy() && rm.id !== room) return toast('not right now!'); setRoom(rm.id); toggleHome(false); };
     bar.appendChild(b);
   });
+  renderRoomActs();
+}
+function toggleHome(show){
+  const bar = $('roomBar'), on = show ?? !bar.classList.contains('show');
+  bar.classList.toggle('show', on); setOn('home', on);
+}
+// what you can do in each room
+const ROOM_ACTS = {
+  yard:     [['📬', 'mailbox', 'mail', '#ffd5dc', '#ef8ea0'], ['🎮', 'play outside', 'play', '#fff0c2', '#e8b744']],
+  living:   [['📺', 'watch & play', 'play', '#fff0c2', '#e8b744'], ['🛋️', 'cuddle', 'hug', '#ffd9ef', '#e77fb8']],
+  kitchen:  [['🍽️', 'feed', 'feed', '#ffd5dc', '#ef8ea0']],
+  bedroom:  [['💤', 'sleep', 'sleep', '#e4dcff', '#9b8ae0']],
+  bathroom: [['🛁', 'bath', 'bath', '#d4ecff', '#79b7e8']],
+  pets:     [['🍖', 'feed', 'feed', '#ffd5dc', '#ef8ea0'], ['🎾', 'play', 'play', '#fff0c2', '#e8b744'], ['🫧', 'bath', 'bath', '#d4ecff', '#79b7e8'], ['💤', 'nap', 'sleep', '#e4dcff', '#9b8ae0'], ['🫶', 'cuddle', 'hug', '#ffd9ef', '#e77fb8']],
+};
+function renderRoomActs(){
+  const el = $('roomActs'), rm = Rooms.ROOMS.find(r => r.id === room);
+  el.innerHTML = `<span class="rname">${rm ? rm.icon + ' ' + esc(rm.name) : ''}</span>`;
+  (ROOM_ACTS[room] || []).forEach(([ic, label, act, bc, bd]) => {
+    const b = document.createElement('button');
+    b.dataset.ract = act; b.style.setProperty('--bc', bc); b.style.setProperty('--bd', bd);
+    const awake = act === 'sleep' && ((room === 'pets' && petNap) || (room !== 'pets' && sleeping));
+    b.textContent = awake ? '☀️ wake up' : `${ic} ${label}`;
+    if ((act === 'bath' && (bath || petBath)) || awake) b.classList.add('on');
+    b.onclick = () => { ac(); roomAct(act); };
+    el.appendChild(b);
+  });
+}
+function roomAct(a){
+  if (a === 'mail') return openBox('letters');
+  if (inPets() && a !== 'play' && petActions[a]) { petActions[a](); }
+  else if (inPets() && a === 'play') petActions.play();
+  else actions[a]();
+  setTimeout(renderRoomActs, 0);
 }
 setInterval(drawBG, 60000);
 // frame picker: choose which photo goes in a frame
@@ -565,13 +631,13 @@ function openFramePicker(fid, presetRef){
   if (presetRef){ frameAssign[fid] = presetRef; store('riri-frames', frameAssign); drawBG(); save(); toast('put in the ' + (f ? f.label : 'frame') + ' 🖼️'); return; }
   openModal('frameM'); $('frameTitle').textContent = '🖼️ ' + (f ? f.label : 'frame');
   const body = $('frameBody'), all = lists.photos();
-  body.innerHTML = `<div class="fgrid"></div><div class="hint">tap a photo to put it in this frame. "newest" always shows the latest photo.</div>`;
+  body.innerHTML = `<div class="fgrid"></div><div class="hint">tap a photo to put it in this frame. "newest" always shows your latest locket photo.</div>`;
   const grid = body.querySelector('.fgrid');
-  const auto = document.createElement('button'); auto.innerHTML = '✨<br>newest'; if (!frameAssign[fid]) auto.className = 'on';
-  auto.onclick = () => { delete frameAssign[fid]; store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); };
+  const auto = document.createElement('button'); auto.innerHTML = '✨<br>newest'; if (frameAssign[fid] === 'newest') auto.className = 'on';
+  auto.onclick = () => { frameAssign[fid] = 'newest'; store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); };
   grid.appendChild(auto);
   all.forEach(ph => {
-    const b = document.createElement('button'); if (frameAssign[fid] === photoRef(ph)) b.className = 'on';
+    const b = document.createElement('button'); if (frameAssign[fid] === photoRef(ph) || (!frameAssign[fid] && ph.featured)) b.className = 'on';
     const im = document.createElement('img'); im.src = ph.src; im.alt = ''; b.appendChild(im);
     b.onclick = () => { frameAssign[fid] = photoRef(ph); store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); boop(880, .08, 'sine', .05, 1.4); };
     grid.appendChild(b);
@@ -691,7 +757,7 @@ function renderStats(){
   ['hunger','fun','energy','clean'].forEach(k => $('s-' + k).style.width = s[k] + '%');
   $('loveBar').style.width = love + '%'; $('loveNum').textContent = Math.round(love) + '%';
 }
-function setOn(act, on){ document.querySelector(`[data-act="${act}"]`).classList.toggle('on', on); }
+function setOn(act, on){ document.querySelectorAll(`[data-act="${act}"]`).forEach(el => el.classList.toggle('on', on)); }
 
 // ---------- actions ----------
 const busy = () => game || bath || sleeping || reading || voicePlaying || petBath;
@@ -770,12 +836,12 @@ const actions = {
   },
   box(){ $('tray').classList.remove('show'); setOn('feed', false); openBox(); },
 };
-const ACT_ROOM = { feed: 'kitchen', sleep: 'bedroom', bath: 'bathroom' };
-document.querySelectorAll('.btn').forEach(b => b.onclick = () => {
+document.querySelectorAll('.actions .btn').forEach(b => b.onclick = () => {
   ac(); const a = b.dataset.act;
-  if (inPets() && petActions[a]) return petActions[a]();
-  if (ACT_ROOM[a] && !busy() && !(a === 'feed' && $('tray').classList.contains('show'))) setRoom(ACT_ROOM[a]);
-  if (a === 'sleep' && sleeping) return actions.sleep();
+  if (a === 'home') return toggleHome();
+  toggleHome(false);
+  if (a === 'cam'){ boop(990, .06); return openCam(); }
+  if (inPets() && (a === 'hug' || a === 'talk')) return a === 'hug' ? petActions.hug() : actions.talk();
   actions[a]();
 });
 // mini games call this when a round ends
@@ -895,7 +961,7 @@ function lowLine(c){
 }
 
 // ---------- main loop ----------
-let last = performance.now(), saveT = 0, chatT = 16, secT = 0, idleT = 3;
+let last = performance.now(), saveT = 0, chatT = 16, secT = 0, idleT = 3, lastActKey = '';
 function step(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   decay(dt);
@@ -1013,7 +1079,7 @@ function step(now){
   }
 
   placeBubbles();
-  secT += dt; if (secT > .5){ secT = 0; renderStats(); }
+  secT += dt; if (secT > .5){ secT = 0; renderStats(); const k = [room, sleeping, petNap, !!bath, !!petBath].join(); if (k !== lastActKey){ lastActKey = k; renderRoomActs(); } }
   saveT += dt; if (saveT > 10){ saveT = 0; save(false); }
 }
 // faces & arms for each moment
@@ -1119,7 +1185,7 @@ const dedupe = arr => { const ids = new Set(); return arr.filter(x => !x.id || (
 const lists = {
   letters: () => dedupe([...remote.letters, ...localLetters, ...(LOVE.letters || [])]).map(l => Object.assign({ from: 'me', to: 'riri' }, l)).sort(byDate),
   voice: () => dedupe([...remote.voice, ...localVoice, ...(LOVE.voice || [])]).sort(byDate),
-  photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || [])]).sort(byDate),
+  photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || []).map(p => Object.assign({ id: 'c:' + p.src }, p))]).filter(p => !p.deleted).sort(byDate),
 };
 // save something new: to the shared database if connected, otherwise on this phone
 function addItem(kind, item){
@@ -1163,28 +1229,7 @@ function showTab(tab, idx){
   const body = $('boxBody'); body.innerHTML = ''; body.scrollTop = 0;
   if (tab === 'letters') return showEnvelopes();
   const list = lists[tab]();
-  if (tab === 'photos'){
-    if (!list.length){ body.innerHTML = `<div class="empty">no photos yet 📸</div>`; }
-    else {
-      const i = Math.min(idx || 0, list.length - 1), ph = list[i];
-      body.innerHTML = `<div class="locket"><img alt=""><div class="cap"></div></div><div class="lmeta"></div><div class="thumbs"></div>`;
-      body.querySelector('.locket img').src = ph.src;
-      const cap = body.querySelector('.cap'); if (ph.caption) cap.textContent = ph.caption; else cap.remove();
-      body.querySelector('.lmeta').textContent = `from ${nameOf(ph.from || 'me')} · ${fmtDate(ph.date)}`;
-      const th = body.querySelector('.thumbs');
-      if (list.length > 1) list.forEach((p2, j) => {
-        const im = document.createElement('img'); im.src = p2.src; im.alt = ''; if (j === i) im.className = 'on';
-        im.onclick = () => showTab('photos', j); th.appendChild(im);
-      }); else th.remove();
-      markSeen('photos', ph);
-    }
-    const row = document.createElement('div'); row.className = 'prow';
-    row.innerHTML = `<button class="pbtn ghost" style="flex:1">🖼️ put in a frame</button><button class="pbtn">📷 take a new one</button>`;
-    row.children[0].onclick = () => { const cur = list[Math.min(idx || 0, list.length - 1)]; if (cur){ closeModal('box'); chooseFrameFor(cur); } };
-    row.children[1].onclick = () => { closeModal('box'); openCam(); };
-    body.appendChild(row);
-    return;
-  }
+  if (tab === 'photos') return showPhotos(idx);
   voiceRecorderUI(body);
   if (!list.length){ body.insertAdjacentHTML('beforeend', `<div class="empty">no voice notes yet… 🥺<br>they'll show up here</div>`); return; }
   list.forEach(it => {
@@ -1277,6 +1322,64 @@ function showCompose(){
   };
 }
 
+// ---------- 📸 locket + 📔 journal ----------
+let photoView = 'locket';
+function editPhoto(ph, ch){
+  const it = Object.assign({}, ph, ch, { id: ph.id || ('c:' + ph.src) }); delete it.local;
+  if (it.deleted) it.src = '';
+  if (synced()){ remote.photos = [it, ...remote.photos.filter(p => p.id !== it.id)]; window.Sync.add('photos', it).catch(() => toast('sync failed, try again')); }
+  else { localPhotos = [it, ...localPhotos.filter(p => p.id !== it.id)]; while (!store('riri-photos', localPhotos) && localPhotos.length > 1) localPhotos.pop(); }
+  if (it.deleted) Object.keys(frameAssign).forEach(k => { if (frameAssign[k] === it.id || frameAssign[k] === ph.src) delete frameAssign[k]; });
+  store('riri-frames', frameAssign); drawBG(); updateBadge();
+}
+function showPhotos(idx){
+  const body = $('boxBody'), list = lists.photos();
+  body.innerHTML = `<div class="chips"><button class="chip" data-v="locket">📸 locket</button><button class="chip" data-v="journal">📔 journal</button></div><div id="pv"></div>`;
+  body.querySelectorAll('[data-v]').forEach(b => { b.classList.toggle('on', b.dataset.v === photoView); b.onclick = () => { photoView = b.dataset.v; showPhotos(0); }; });
+  const pv = body.querySelector('#pv');
+  const newBtn = () => { const row = document.createElement('div'); row.className = 'prow'; row.innerHTML = `<button class="pbtn">📷 take a new one</button>`; row.firstChild.onclick = () => { closeModal('box'); openCam(); }; pv.appendChild(row); };
+  if (!list.length){ pv.innerHTML = `<div class="empty">no photos yet 📸</div>`; newBtn(); return; }
+  if (photoView === 'journal'){
+    list.forEach((ph, j) => {
+      const c = document.createElement('button'); c.className = 'jcard';
+      c.innerHTML = `<img alt=""><div style="flex:1;min-width:0"><div class="jd"></div><b></b><p></p></div>`;
+      c.querySelector('img').src = ph.src;
+      c.querySelector('.jd').textContent = `${fmtDate(ph.date)} · from ${nameOf(ph.from || 'me')}${seen.has(ikey('photos', ph)) ? '' : ' · NEW'}`;
+      c.querySelector('b').textContent = ph.caption || 'a little moment';
+      c.querySelector('p').textContent = ph.journal || 'tap to write about this day ✍️';
+      c.onclick = () => { photoView = 'locket'; showPhotos(j); };
+      pv.appendChild(c);
+    });
+    newBtn(); return;
+  }
+  const i = Math.min(idx || 0, list.length - 1), ph = list[i];
+  pv.innerHTML = `<div class="locket"><img alt=""><div class="cap"></div></div><div class="lmeta"></div><div class="jtext"></div>
+    <div class="prow"><button class="pbtn ghost" id="phEdit" style="flex:1">✏️ edit journal</button><button class="pbtn ghost" id="phFrame" style="flex:1">🖼️ frame it</button><button class="pbtn danger" id="phDel" aria-label="Delete">🗑️</button></div>
+    <div class="thumbs" style="margin-top:10px"></div>`;
+  pv.querySelector('.locket img').src = ph.src;
+  const cap = pv.querySelector('.cap'); if (ph.caption) cap.textContent = ph.caption; else cap.remove();
+  pv.querySelector('.lmeta').textContent = `from ${nameOf(ph.from || 'me')} · ${fmtDate(ph.date)}`;
+  const jt = pv.querySelector('.jtext'); jt.textContent = ph.journal || 'no journal entry yet… tap ✏️ to write about this moment'; if (!ph.journal) jt.classList.add('empty2');
+  $('phEdit').onclick = () => editJournal(ph, i);
+  $('phFrame').onclick = () => { closeModal('box'); chooseFrameFor(ph); };
+  $('phDel').onclick = () => { if (!confirm('delete this photo from your locket?' + (synced() ? ' (it will be removed from both phones)' : ''))) return; editPhoto(ph, { deleted: true }); toast('photo deleted 🗑️'); showPhotos(Math.max(0, i - 1)); };
+  const th = pv.querySelector('.thumbs');
+  if (list.length > 1) list.forEach((p2, j) => { const im = document.createElement('img'); im.src = p2.src; im.alt = ''; if (j === i) im.className = 'on'; im.onclick = () => showPhotos(j); th.appendChild(im); }); else th.remove();
+  markSeen('photos', ph);
+  newBtn();
+}
+function editJournal(ph, i){
+  const body = $('boxBody');
+  body.innerHTML = `<div class="compose"><div class="locket" style="width:120px;margin:0 auto 12px;border-radius:18px"><img alt=""></div>
+      <input id="jCap" maxlength="40" placeholder="caption…">
+      <textarea id="jTxt" placeholder="dear journal, today we…"></textarea></div>
+    <div class="prow"><button class="pbtn ghost" id="jBack">← back</button><button class="pbtn" id="jSave">💛 save</button></div>`;
+  body.querySelector('img').src = ph.src;
+  $('jCap').value = ph.caption || ''; $('jTxt').value = ph.journal || '';
+  $('jBack').onclick = () => showPhotos(i);
+  $('jSave').onclick = () => { editPhoto(ph, { caption: $('jCap').value.trim(), journal: $('jTxt').value.trim(), edited: Date.now() }); toast('journal saved 📔'); boop(880, .1, 'sine', .05, 1.5); showPhotos(i); };
+}
+
 // ---------- reading letters / voice notes ----------
 function readLetter(l){
   stopMessages();
@@ -1342,7 +1445,7 @@ function finishMessage(reader, line){
 
 // ---------- camera (Locket) ----------
 let camStream = null, facing = 'user', shot = null;
-$('camBtn').onclick = () => { ac(); boop(990, .06); openCam(); };
+
 function stopCam(){ if (camStream){ camStream.getTracks().forEach(tk => tk.stop()); camStream = null; } }
 async function openCam(){
   if (sleeping || game) return toast('not right now!');
@@ -1389,6 +1492,7 @@ function showShot(data){
   let from = myId();
   body.innerHTML = `<div class="locket"><img alt=""><input class="cap" id="shotCap" maxlength="40" placeholder="add a message…"></div>
     <div class="chips" style="margin-top:12px"><button class="chip" data-w="riri">from ${esc(chars[0].name)}</button><button class="chip" data-w="me">from ${esc(chars[1].name)}</button></div>
+    <div class="compose"><textarea id="shJournal" style="height:96px" placeholder="📔 journal: what are we doing today?"></textarea></div>
     <div class="prow"><button class="pbtn ghost" id="shRetake">↺</button><button class="pbtn" id="shSave">💛 add to our locket</button></div>`;
   body.querySelector('img').src = data;
   const chips = body.querySelectorAll('.chip');
@@ -1396,7 +1500,7 @@ function showShot(data){
   chips.forEach(c => c.onclick = () => setFrom(c.dataset.w)); setFrom(from);
   $('shRetake').onclick = openCam;
   $('shSave').onclick = () => {
-    const ph = { date: today(), ts: Date.now(), from, caption: $('shotCap').value.trim(), src: shot, local: true };
+    const ph = { date: today(), ts: Date.now(), from, caption: $('shotCap').value.trim(), journal: $('shJournal').value.trim(), src: shot, local: true };
     addItem('photos', ph);
     seen.add(ikey('photos', ph)); store('riri-seen', [...seen]); updateBadge();
     drawBG();
@@ -1541,7 +1645,7 @@ window.addEventListener('sync:state', e => {
   if (st.by === deviceId || st.ts === stateTs) return;
   (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name; Object.assign(chars[i].stats, c.stats || {}); } });
   if (typeof st.love === 'number') love = st.love;
-  (st.pets || []).forEach((p2, i) => { if (pets[i]){ if (p2.name) pets[i].name = p2.name; Object.assign(pets[i].stats, p2.stats || {}); } });
+  (st.pets || []).forEach((p2, i) => { if (pets[i]){ if (p2.name) pets[i].name = ({ Mochi: 'Molly', Sunny: 'Shiro' })[p2.name] || p2.name; Object.assign(pets[i].stats, p2.stats || {}); } });
   if (st.frames && typeof st.frames === 'object'){ frameAssign = st.frames; store('riri-frames', frameAssign); drawBG(); }
   stateTs = st.ts;
   decay(Math.max(0, (Date.now() - st.ts) / 1000));
