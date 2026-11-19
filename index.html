@@ -48,6 +48,7 @@
   .roomacts .rname{align-self:center; font-size:12px; color:var(--muted); margin-right:2px}
   [data-act="home"]{--bc:#ffe9a8; --bd:#e8b744}
   [data-act="cam"]{--bc:#e3efff; --bd:#86aee0}
+  [data-act="journal"]{--bc:#ffd6d6; --bd:#e06a6a}
   .jcard{width:100%; display:flex; gap:10px; text-align:left; border:2px solid var(--line); background:#fffdf6; color:#4a2a35; border-radius:14px; padding:8px; margin-bottom:10px; font:inherit; cursor:pointer; box-shadow:0 3px 0 #ead9c2}
   .jcard img:not(.pxi){width:76px; height:76px; border-radius:12px; object-fit:cover; flex:none}
   .jcard .jd{font-size:11px; color:#b0808e} .jcard b{display:block; font-size:15px; margin:1px 0 3px}
@@ -283,7 +284,7 @@
     <button class="btn" data-act="home"><b>🏠</b>Home</button>
     <button class="btn" data-act="play"><b>🎮</b>Play</button>
     <button class="btn" data-act="talk"><b>🎤</b>Talk</button>
-    <button class="btn" data-act="hug"><b>💕</b>Hug</button>
+    <button class="btn" data-act="journal"><b>📔</b>Journal</button>
     <button class="btn" data-act="cam"><b>📷</b>Camera</button>
     <button class="btn" data-act="box"><b>💌</b>Letters<span class="dot" id="boxDot"></span></button>
   </div>
@@ -653,10 +654,10 @@ function toggleHome(show){
 }
 // what you can do in each room
 const ROOM_ACTS = {
-  yard:     [['📬', 'mailbox', 'mail', '#ffd5dc', '#ef8ea0'], ['🎮', 'play outside', 'play', '#fff0c2', '#e8b744']],
-  living:   [['📺', 'watch & play', 'play', '#fff0c2', '#e8b744'], ['🛋️', 'cuddle', 'hug', '#ffd9ef', '#e77fb8']],
-  kitchen:  [['🍽️', 'feed', 'feed', '#ffd5dc', '#ef8ea0']],
-  bedroom:  [['💤', 'sleep', 'sleep', '#e4dcff', '#9b8ae0']],
+  yard:     [['💕', 'hug', 'hug', '#ffd9ef', '#e77fb8'], ['📬', 'mailbox', 'mail', '#ffd5dc', '#ef8ea0'], ['🎮', 'play outside', 'play', '#fff0c2', '#e8b744']],
+  living:   [['🛋️', 'cuddle', 'hug', '#ffd9ef', '#e77fb8'], ['📺', 'watch & play', 'play', '#fff0c2', '#e8b744']],
+  kitchen:  [['🍽️', 'feed', 'feed', '#ffd5dc', '#ef8ea0'], ['💕', 'hug', 'hug', '#ffd9ef', '#e77fb8']],
+  bedroom:  [['💤', 'sleep', 'sleep', '#e4dcff', '#9b8ae0'], ['💕', 'hug', 'hug', '#ffd9ef', '#e77fb8']],
   bathroom: [['🛁', 'bath', 'bath', '#d4ecff', '#79b7e8']],
   pets:     [['🍖', 'feed', 'feed', '#ffd5dc', '#ef8ea0'], ['🎾', 'play', 'play', '#fff0c2', '#e8b744'], ['🫧', 'bath', 'bath', '#d4ecff', '#79b7e8'], ['💤', 'nap', 'sleep', '#e4dcff', '#9b8ae0'], ['🫶', 'cuddle', 'hug', '#ffd9ef', '#e77fb8']],
 };
@@ -897,7 +898,8 @@ document.querySelectorAll('.actions .btn').forEach(b => b.onclick = () => {
   if (a === 'home') return toggleHome();
   toggleHome(false);
   if (a === 'cam'){ boop(990, .06); return openCam(); }
-  if (inPets() && (a === 'hug' || a === 'talk')) return a === 'hug' ? petActions.hug() : actions.talk();
+  if (a === 'journal'){ boop(620, .1, 'sine', .05, 1.5); return openBox('journal'); }
+  if (inPets() && a === 'talk') return actions.talk();
   actions[a]();
 });
 // mini games call this when a round ends
