@@ -144,12 +144,21 @@
   .flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none}
   .flash.go{animation:flash .35s}
   @keyframes flash{0%{opacity:.9}100%{opacity:0}}
+  .syncb{position:relative; width:34px; height:34px; border-radius:50%; border:2px solid var(--line); background:var(--panel); font-size:16px; cursor:pointer; padding:0; flex:none}
+  .syncb i{position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%; background:#bbb; border:2px solid var(--bg)}
+  .syncb[data-s="on"] i{background:#4cc77a} .syncb[data-s="connecting"] i{background:#f6b84b} .syncb[data-s="error"] i{background:#ef4b5b}
+  .field{width:100%; border:2px solid var(--line); border-radius:10px; padding:10px; font:inherit; font-size:15px; background:var(--bg); color:var(--ink); margin:6px 0 4px; letter-spacing:.5px}
+  .stline{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:var(--bg); border:2px solid var(--line); margin-bottom:12px; font-size:14px}
+  .stline b{flex:1}
+  .lbl{font-size:13px; color:var(--muted); margin:12px 0 4px}
+  .rec{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+  .recdot{width:12px; height:12px; border-radius:50%; background:#ef4b5b; animation:pulse 1s infinite}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <h1 id="title">Riri <span>&amp;</span> Me</h1>
+    <div style="display:flex;align-items:center;gap:8px"><h1 id="title">Riri <span>&amp;</span> Me</h1><button class="syncb" id="syncBtn" aria-label="Sync">🔗<i></i></button></div>
     <div class="love">💗 <div class="bar"><i id="loveBar" style="background-color:var(--love)"></i></div><span id="loveNum">80%</span></div>
   </header>
   <div class="tabs" id="tabs"></div>
@@ -201,8 +210,15 @@
     <div class="body" id="camBody"></div>
   </div>
 </div>
+<div class="modal" id="syncM">
+  <div class="sheet">
+    <div class="sheet-head"><b>🔗 Sync our phones</b><button class="x" data-close="syncM" aria-label="Close">✕</button></div>
+    <div class="body" id="syncBody"></div>
+  </div>
+</div>
 <input type="file" id="fileIn" accept="image/*" hidden>
 
+<script src="sync-config.js"></script>
 <script src="content.js"></script>
 <script>
 (() => {
@@ -317,11 +333,20 @@ const petBox = q => ({ x: q.cx - q.w / 2, y: GROUND - q.h + q.jy, w: q.w, h: q.h
 // ---------- state ----------
 let sel = 0, love = 80, sleeping = false, hugT = 0, t = 0;
 let particles = [], flying = [], bath = null, game = null, reading = null, voicePlaying = null;
-function save(){ store('riri-pet', { chars: chars.map(c => ({ name:c.name, stats:c.stats })), love, ts: Date.now() }); }
+// stateTs = time of the last real action (feeding, hugging…). Only actions are shared, not the slow decay.
+let pushTimer = null, stateTs = 0;
+function pushState(){
+  clearTimeout(pushTimer); pushTimer = null;
+  if (synced()) window.Sync.saveState({ chars: chars.map(c => ({ name: c.name, stats: c.stats })), love, ts: stateTs, by: deviceId }).catch(() => {});
+}
+function save(action = true){
+  if (action){ stateTs = Date.now(); if (!pushTimer) pushTimer = setTimeout(pushState, 2500); }
+  store('riri-pet', { chars: chars.map(c => ({ name:c.name, stats:c.stats })), love, ts: Date.now(), actionTs: stateTs });
+}
 function load(){
   const d = fetchStore('riri-pet', null); if (!d) return;
   (d.chars || []).forEach((s, i) => { if (chars[i]){ chars[i].name = s.name || chars[i].name; Object.assign(chars[i].stats, s.stats); } });
-  love = d.love ?? love;
+  love = d.love ?? love; stateTs = d.actionTs || 0;
   decay(Math.min((Date.now() - (d.ts || Date.now())) / 1000, 12 * 3600) * .5);
 }
 function decay(dt){
@@ -729,9 +754,17 @@ function frame(now){
 
   placeBubbles();
   secT += dt; if (secT > .5){ secT = 0; renderStats(); }
-  saveT += dt; if (saveT > 10){ saveT = 0; save(); }
+  saveT += dt; if (saveT > 10){ saveT = 0; save(false); }
   requestAnimationFrame(frame);
 }
+
+// ---------- who's holding this phone + synced data ----------
+let who = fetchStore('riri-who', null);                      // 'riri' | 'me' | null
+const myId = () => who || chars[sel].id;
+const deviceId = fetchStore('riri-device', null) || (() => { const d = Math.random().toString(36).slice(2, 10); store('riri-device', d); return d; })();
+const remote = { letters: [], photos: [], voice: [] };
+const synced = () => !!(window.Sync && window.Sync.add && window.Sync.status !== 'error');
+const newId = k => k[0] + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // ---------- love box data ----------
 const ikey = (k, it) => k + '|' + (it.date || '') + '|' + (it.title || it.caption || '') + '|' + (it.from || '') + '|' + (it.ts || it.src || '').toString().slice(0, 40);
@@ -740,11 +773,26 @@ function markSeen(k, it){ seen.add(ikey(k, it)); store('riri-seen', [...seen]); 
 let localLetters = fetchStore('riri-letters', []);
 let localPhotos = fetchStore('riri-photos', []);
 const byDate = (a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.ts || 0) - (a.ts || 0);
+let localVoice = fetchStore('riri-voice', []);
+const dedupe = arr => { const ids = new Set(); return arr.filter(x => !x.id || (ids.has(x.id) ? false : ids.add(x.id))); };
 const lists = {
-  letters: () => [...localLetters, ...(LOVE.letters || [])].map(l => Object.assign({ from: 'me', to: 'riri' }, l)).sort(byDate),
-  voice: () => (LOVE.voice || []).slice().sort(byDate),
-  photos: () => [...localPhotos, ...(LOVE.photos || [])].sort(byDate),
+  letters: () => dedupe([...remote.letters, ...localLetters, ...(LOVE.letters || [])]).map(l => Object.assign({ from: 'me', to: 'riri' }, l)).sort(byDate),
+  voice: () => dedupe([...remote.voice, ...localVoice, ...(LOVE.voice || [])]).sort(byDate),
+  photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || [])]).sort(byDate),
 };
+// save something new: to the shared database if connected, otherwise on this phone
+function addItem(kind, item){
+  item.id = item.id || newId(kind);
+  if (synced()){
+    remote[kind].unshift(item);
+    window.Sync.add(kind, item).catch(e => { toast('sync failed, saved on this phone'); keepLocal(kind, item); });
+  } else keepLocal(kind, item);
+}
+function keepLocal(kind, item){
+  const arr = { letters: localLetters, photos: localPhotos, voice: localVoice }[kind];
+  if (!arr.includes(item)) arr.unshift(item);
+  while (!store('riri-' + kind, arr) && arr.length > 1) arr.pop();
+}
 const unreadOf = k => lists[k]().filter(it => !seen.has(ikey(k, it))).length;
 const totalUnread = () => unreadOf('letters') + unreadOf('voice') + unreadOf('photos');
 function updateBadge(){
@@ -795,7 +843,8 @@ function showTab(tab, idx){
     body.appendChild(row);
     return;
   }
-  if (!list.length){ body.innerHTML = `<div class="empty">no voice notes yet… 🥺<br>they'll show up here</div>`; return; }
+  voiceRecorderUI(body);
+  if (!list.length){ body.insertAdjacentHTML('beforeend', `<div class="empty">no voice notes yet… 🥺<br>they'll show up here</div>`); return; }
   list.forEach(it => {
     const b = document.createElement('button'); b.className = 'item';
     const isNew = !seen.has(ikey(tab, it));
@@ -856,14 +905,14 @@ function showLetter(l){
 }
 function showCompose(){
   const body = $('boxBody'); body.scrollTop = 0;
-  let from = chars[sel].id;
+  let from = myId();
   body.innerHTML = `<div class="compose">
       <div class="chips"><button class="chip" data-w="riri">from ${esc(chars[0].name)}</button><button class="chip" data-w="me">from ${esc(chars[1].name)}</button></div>
       <input id="cTitle" maxlength="40" placeholder="title…">
       <textarea id="cBody" placeholder="dear …"></textarea>
     </div>
     <div class="prow"><button class="pbtn ghost" id="cBack">← back</button><button class="pbtn" id="cSave">💌 seal it</button></div>
-    <div class="hint">sealed letters are saved in this game on this phone. tap <b>send</b> on the next screen to text it to your person too 💕</div>`;
+    <div class="hint">${synced() ? 'it will show up on both of your phones 💕' : 'sealed letters are saved on this phone. tap 🔗 at the top to sync your phones, or tap <b>send</b> next to text it 💕'}</div>`;
   const chips = body.querySelectorAll('.chip');
   const setFrom = id => { from = id; chips.forEach(c => c.classList.toggle('on', c.dataset.w === id)); };
   chips.forEach(c => c.onclick = () => setFrom(c.dataset.w)); setFrom(from);
@@ -872,7 +921,7 @@ function showCompose(){
     const title = $('cTitle').value.trim(), text = $('cBody').value.trim();
     if (!text) return toast('write something first ✍️');
     const l = { date: today(), ts: Date.now(), from, to: from === 'riri' ? 'me' : 'riri', title: title || 'a little letter', body: text, local: true };
-    localLetters.unshift(l); store('riri-letters', localLetters);
+    addItem('letters', l);
     seen.add(ikey('letters', l)); store('riri-seen', [...seen]); updateBadge();
     boop(520, .15, 'sine', .05, 2);
     body.innerHTML = `<div class="empty">💌<br>sealed &amp; saved!</div>
@@ -994,7 +1043,7 @@ $('fileIn').onchange = e => {
 function showShot(data){
   shot = data;
   const body = $('camBody');
-  let from = chars[sel].id;
+  let from = myId();
   body.innerHTML = `<div class="locket"><img alt=""><input class="cap" id="shotCap" maxlength="40" placeholder="add a message…"></div>
     <div class="chips" style="margin-top:12px"><button class="chip" data-w="riri">from ${esc(chars[0].name)}</button><button class="chip" data-w="me">from ${esc(chars[1].name)}</button></div>
     <div class="prow"><button class="pbtn ghost" id="shRetake">↺</button><button class="pbtn" id="shSave">💛 add to our locket</button></div>`;
@@ -1005,14 +1054,13 @@ function showShot(data){
   $('shRetake').onclick = openCam;
   $('shSave').onclick = () => {
     const ph = { date: today(), ts: Date.now(), from, caption: $('shotCap').value.trim(), src: shot, local: true };
-    localPhotos.unshift(ph);
-    while (!store('riri-photos', localPhotos) && localPhotos.length > 1) localPhotos.pop();
+    addItem('photos', ph);
     seen.add(ikey('photos', ph)); store('riri-seen', [...seen]); updateBadge();
     setFramePhoto(ph.src);
     chars.forEach(c => { c.grinT = 2; c.vy = -60; c.jy = -1; }); pets.forEach(q => { q.happyT = 2; });
     hearts(26, 30, 6); boop(880, .1, 'sine', .06, 1.5);
     body.innerHTML = `<div class="locket"><img alt="">${ph.caption ? '<div class="cap"></div>' : ''}</div>
-      <div class="lmeta">saved to your locket 💛 it's on the wall now</div>
+      <div class="lmeta">${synced() ? 'sent to both of your lockets 💛' : 'saved to your locket 💛 it\'s on the wall now'}</div>
       <div class="prow"><button class="pbtn ghost" id="shDone">done</button><button class="pbtn" id="shSend">📤 send to ${esc(nameOf(from === 'riri' ? 'me' : 'riri'))}</button></div>`;
     body.querySelector('img').src = ph.src;
     if (ph.caption) body.querySelector('.cap').textContent = ph.caption;
@@ -1030,15 +1078,142 @@ async function sharePhoto(ph){
   } catch(e){ if (e.name !== 'AbortError') toast('couldn\'t share 🥺'); }
 }
 
+// ---------- voice notes recorded in the app ----------
+let vRec = null;
+function voiceRecorderUI(body){
+  const box = document.createElement('div');
+  box.innerHTML = `<div class="rec"><button class="pbtn" id="vRecBtn">🎙️ record a voice note</button></div>`;
+  body.appendChild(box);
+  const btn = box.querySelector('#vRecBtn');
+  if (vRec){ btn.textContent = '⏹ stop & send'; }
+  btn.onclick = async () => {
+    if (vRec){ vRec.stop(); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) return toast('recording isn\'t supported here 🥺');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks = [];
+      let mr; try { mr = new MediaRecorder(stream, { audioBitsPerSecond: 24000 }); } catch(e){ mr = new MediaRecorder(stream); }
+      vRec = mr;
+      const started = Date.now();
+      const tick = setInterval(() => { const n = Math.floor((Date.now() - started) / 1000); btn.textContent = `⏹ stop & send  (${n}s / 30s)`; if (n >= 30) mr.stop(); }, 250);
+      mr.ondataavailable = e => chunks.push(e.data);
+      mr.onstop = () => {
+        clearInterval(tick); stream.getTracks().forEach(tk => tk.stop()); vRec = null;
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        if (Date.now() - started < 800){ showTab('voice'); return; }
+        const rd = new FileReader();
+        rd.onload = () => {
+          const title = (prompt('name this voice note:', 'hi baby 💕') || 'voice note').slice(0, 40);
+          const v = { date: today(), ts: Date.now(), from: myId(), title, src: rd.result, local: true };
+          addItem('voice', v);
+          seen.add(ikey('voice', v)); store('riri-seen', [...seen]); updateBadge();
+          toast(synced() ? 'sent 🎧💕' : 'saved on this phone 🎧'); boop(880, .1, 'sine', .05, 1.5);
+          showTab('voice');
+        };
+        rd.readAsDataURL(blob);
+      };
+      mr.start(); btn.textContent = '⏹ stop & send  (0s / 30s)'; boop(660, .08, 'sine', .05);
+    } catch(e){ toast('let me use the mic? 🎤'); }
+  };
+}
+
+// ---------- sync screen ----------
+const syncBtn = $('syncBtn');
+syncBtn.onclick = () => { boop(880, .05); openSync(); };
+function genCode(){ const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = 'riri'; for (let i = 0; i < 4; i++){ s += '-'; for (let j = 0; j < 4; j++) s += a[Math.floor(Math.random() * a.length)]; } return s; }
+function openSync(){ openModal('syncM'); renderSync(); }
+function renderSync(){
+  const S = window.Sync, body = $('syncBody');
+  if (!$('syncM').classList.contains('show')) return;
+  if (!S){ body.innerHTML = `<div class="empty">loading…</div>`; return; }
+  const whoChips = `<div class="lbl">this phone belongs to…</div>
+    <div class="chips"><button class="chip" data-who="riri">🎀 ${esc(chars[0].name)}</button><button class="chip" data-who="me">👓 ${esc(chars[1].name)}</button></div>`;
+  if (!S.configured){
+    body.innerHTML = `<div class="empty">sync isn't set up yet 🛠️<br><small>add your Firebase settings to <b>sync-config.js</b>.<br>steps are in README.md</small></div>${whoChips}`;
+  } else if (S.status === 'on' || S.status === 'connecting'){
+    body.innerHTML = `<div class="stline">${S.status === 'on' ? '🟢' : '🟡'} <b>${S.status === 'on' ? 'synced! your phones are connected 💕' : 'connecting…'}</b></div>
+      <div class="lbl">your secret pair code</div><input class="field" readonly value="${esc(S.room || '')}">
+      <div class="prow"><button class="pbtn" id="shareCode">📤 send code to ${esc(chars[who === 'me' ? 0 : 1].name)}</button></div>
+      ${whoChips}
+      <div class="prow"><button class="pbtn ghost" id="unpair" style="flex:1">unpair this phone</button></div>
+      <div class="hint">letters, photos, voice notes and your pets' stats are shared. keep the code secret, anyone with it can see your stuff.</div>`;
+    $('shareCode').onclick = async () => {
+      const link = location.origin + location.pathname + '#join=' + S.room;
+      const text = `join me in our little game 💕 ${link}`;
+      try { if (navigator.share){ await navigator.share({ text }); return; } } catch(e){ if (e.name === 'AbortError') return; }
+      try { await navigator.clipboard.writeText(link); toast('link copied! send it 💕'); } catch(e){ toast(S.room); }
+    };
+    $('unpair').onclick = () => { if (confirm('unpair this phone? (nothing is deleted)')){ S.disconnect(); remote.letters = []; remote.photos = []; remote.voice = []; updateBadge(); renderSync(); } };
+  } else {
+    body.innerHTML = `${S.status === 'error' ? `<div class="stline">🔴 <b>${esc(S.error || 'couldn\'t connect')}</b></div>` : ''}
+      <div class="lbl">first phone: make a code. second phone: type the same code (or open the link they sent)</div>
+      <input class="field" id="codeIn" placeholder="riri-xxxx-xxxx-xxxx-xxxx" autocapitalize="off" autocomplete="off" spellcheck="false">
+      <div class="prow"><button class="pbtn ghost" id="mkCode">✨ new code</button><button class="pbtn" id="pair">🔗 connect</button></div>
+      ${whoChips}
+      <div class="hint">pick who you are first, so letters and photos are signed right 💕</div>`;
+    const inp = $('codeIn'); inp.value = fetchStore('riri-lastcode', '') || '';
+    $('mkCode').onclick = () => { inp.value = genCode(); };
+    $('pair').onclick = () => {
+      const c = inp.value.trim().toLowerCase();
+      if (c.length < 16) return toast('code must be at least 16 characters');
+      store('riri-lastcode', c);
+      S.connect(c); renderSync();
+    };
+  }
+  body.querySelectorAll('[data-who]').forEach(b => {
+    b.classList.toggle('on', b.dataset.who === who);
+    b.onclick = () => { who = b.dataset.who; store('riri-who', who); sel = chars.indexOf(charById(who)); renderTabs(); renderSync(); };
+  });
+}
+function migrateLocal(){
+  // first time this phone connects: move anything saved only on this phone into the shared box
+  [['letters', localLetters], ['photos', localPhotos], ['voice', localVoice]].forEach(([k, arr]) => {
+    if (!arr.length) return;
+    arr.slice().forEach(it => { it.id = it.id || newId(k); window.Sync.add(k, it).then(() => { const i = arr.indexOf(it); if (i >= 0) arr.splice(i, 1); store('riri-' + k, arr); }).catch(() => {}); });
+  });
+}
+window.addEventListener('sync:status', e => {
+  syncBtn.dataset.s = e.detail.status;
+  if (e.detail.status === 'on') migrateLocal();
+  renderSync();
+});
+window.addEventListener('sync:ready', () => { syncBtn.dataset.s = window.Sync.status; renderSync(); });
+window.addEventListener('sync:items', e => {
+  const { kind, items, added } = e.detail;
+  remote[kind] = items;
+  if (kind === 'photos'){ const top = lists.photos()[0]; if (top && (!framePhoto || framePhoto.src !== new URL(top.src, location.href).href)) setFramePhoto(top.src); }
+  const forMe = added.filter(it => it.from && it.from !== who);
+  if (forMe.length){
+    const it = forMe[0], n = nameOf(it.from);
+    toast({ letters: `💌 new letter from ${n}!`, photos: `📸 ${n} posted a photo!`, voice: `🎧 voice note from ${n}!` }[kind], 3500);
+    boop(880, .1, 'sine', .06, 1.5); setTimeout(() => boop(1320, .15, 'sine', .05, 1.2), 140);
+    pets.forEach(q => { q.happyT = 2; q.vy = -50; q.jy = -1; });
+  }
+  updateBadge();
+  if ($('box').classList.contains('show') && boxTab === kind && !$('boxBody').querySelector('.paper,.compose,.locket')) showTab(kind);
+});
+window.addEventListener('sync:state', e => {
+  const st = e.detail;
+  if (!st || st.ts < stateTs){ if (stateTs) pushState(); return; }   // ours is newer (or nothing shared yet)
+  if (st.by === deviceId || st.ts === stateTs) return;
+  (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name; Object.assign(chars[i].stats, c.stats || {}); } });
+  if (typeof st.love === 'number') love = st.love;
+  stateTs = st.ts;
+  decay(Math.max(0, (Date.now() - st.ts) / 1000));
+  save(false); renderTabs(); renderStats();
+});
+if (who) sel = chars.indexOf(charById(who));
+
 // ---------- start ----------
 load(); renderTabs(); renderStats(); updateBadge();
 setFramePhoto((lists.photos()[0] || {}).src);
 if (totalUnread()) setTimeout(() => toast('💌 you have something new!', 3000), 900);
 window.__pet = { chars, pets, say, actions, openBox, showTab, readLetter, openCam, showShot, geo };
 window.addEventListener('resize', placeBubbles);
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(false); });
 requestAnimationFrame(frame);
 })();
 </script>
+<script type="module" src="sync.js"></script>
 </body>
 </html>

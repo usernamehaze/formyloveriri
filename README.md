@@ -50,3 +50,40 @@ You can do all of this from the GitHub website or app:
 The newest photo shows up in the gold frame on the wall. She can tap it to see it full size and scroll through older ones.
 
 Use lowercase file names with no spaces. GitHub Pages updates about a minute after you commit.
+
+## 🔗 Syncing between your phones
+
+With sync on, letters, photos, voice notes and the pets' stats (hunger, love meter…) are shared live.
+It uses a free Firebase database in **your own** Google account. Setup takes about 5 minutes and only has to be done once.
+
+### 1. Create the database
+1. Go to **https://console.firebase.google.com** → **Create a project** → name it (e.g. `riri-and-me`). You can turn Google Analytics off.
+2. Left menu: **Build → Firestore Database → Create database**. Pick a location near you, and choose **production mode**.
+3. Open the **Rules** tab, replace everything with this, then click **Publish**:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /rooms/{room}/{rest=**} {
+         allow read, write: if request.auth != null && room.size() >= 16;
+       }
+     }
+   }
+   ```
+4. Left menu: **Build → Authentication → Get started → Sign-in method → Anonymous → Enable → Save**.
+5. Still in Authentication: **Settings → Authorized domains → Add domain** → `usernamehaze.github.io`.
+
+### 2. Connect the game to it
+1. Click the ⚙️ gear (top left) → **Project settings** → scroll to **Your apps** → click the **`</>`** (Web) icon → give it a nickname → **Register app**.
+2. Copy the `firebaseConfig = { ... }` block it shows you.
+3. Open **`sync-config.js`** in this repo, and replace `window.FIREBASE_CONFIG = null;` with
+   `window.FIREBASE_CONFIG = { ...what you copied... };`, then commit.
+   (Or just send the config to Claude and it'll do it. These values aren't secret.)
+
+### 3. Pair your phones
+1. On your phone, open the game → tap **🔗** next to the title → pick who you are → **✨ new code** → **🔗 connect**.
+2. Tap **📤 send code to Riri** and text her the link.
+3. She opens the link → it connects automatically → she taps 🔗 and picks **🎀 Riri**.
+
+The green dot on 🔗 means you're synced. Keep the pair code private, because anyone with it can see your stuff.
+Letters and photos you made before syncing get moved into the shared box automatically.
