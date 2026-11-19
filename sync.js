@@ -1,72 +1,89 @@
-// 🔗 Sync between your phones (Firebase Firestore).
-// Everything lives under rooms/<your secret pair code>/ so only phones with the code can see it.
-const V = '10.12.2';
-const cfg = window.FIREBASE_CONFIG;
-const S = window.Sync = { configured: !!(cfg && cfg.apiKey), status: 'off', error: '', room: null, add: null, saveState: null, connect: null, disconnect: null };
+// 🔗 Sync between your phones through your Cloudflare Worker (see worker/worker.js).
+// Everything is stored under your secret pair code, so only phones with the code can see it.
+// Each phone checks for new things every few seconds while the game is open.
+const BASE = String(window.SYNC_URL || '').trim().replace(/\/+$/, '');
+const S = window.Sync = { configured: !!BASE, status: 'off', error: '', room: null, add: null, saveState: null, connect: null, disconnect: null };
 const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 const setStatus = (st, err = '') => { S.status = st; S.error = err; emit('sync:status', { status: st, error: err }); };
+const KINDS = ['letters', 'photos', 'voice'];
 
-if (!S.configured){
-  setStatus('unconfigured');
-} else {
-  let fb = null;
-  const load = async () => {
-    if (fb) return fb;
-    const [app, auth, fs] = await Promise.all([
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`),
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`),
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`),
-    ]);
-    const a = app.initializeApp(cfg);
-    fb = { auth: auth.getAuth(a), db: fs.getFirestore(a), authMod: auth, fs };
-    return fb;
-  };
-  let unsubs = [];
-  const KINDS = { letters: 300, photos: 80, voice: 100 };
+let gen = 0, timer = null, cursor = 0, first = true, lastStateTs = -1;
+let items = {}, mine = new Set();
+const reset = () => { cursor = 0; first = true; lastStateTs = -1; items = { letters: new Map(), photos: new Map(), voice: new Map() }; mine = new Set(); };
+reset();
 
-  S.connect = async room => {
-    room = String(room || '').trim();
-    if (room.length < 16) throw new Error('pair code is too short');
-    S.disconnect(true);
-    setStatus('connecting');
-    try {
-      const { auth, db, authMod, fs } = await load();
-      if (!auth.currentUser) await authMod.signInAnonymously(auth);
-      S.room = room;
-      try { localStorage.setItem('riri-room', room); } catch(e){}
-      const base = ['rooms', room];
-      Object.entries(KINDS).forEach(([kind, max]) => {
-        const q = fs.query(fs.collection(db, ...base, kind), fs.orderBy('ts', 'desc'), fs.limit(max));
-        let first = true;
-        unsubs.push(fs.onSnapshot(q, snap => {
-          const items = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
-          const added = first ? [] : snap.docChanges().filter(c => c.type === 'added' && !c.doc.metadata.hasPendingWrites).map(c => Object.assign({ id: c.doc.id }, c.doc.data()));
-          first = false;
-          emit('sync:items', { kind, items, added });
-          if (S.status !== 'on') setStatus('on');
-        }, err => setStatus('error', err.code === 'permission-denied' ? 'permission denied: check the Firestore rules & anonymous sign-in' : err.message)));
-      });
-      unsubs.push(fs.onSnapshot(fs.doc(db, ...base, 'meta', 'state'), d => { if (d.metadata.hasPendingWrites) return; emit('sync:state', d.exists() ? d.data() : null); }, () => {}));
-      S.add = (kind, item) => {
-        const id = item.id || (kind[0] + Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
-        const data = Object.assign({}, item); delete data.id; delete data.local;
-        return fs.setDoc(fs.doc(db, ...base, kind, id), data);
-      };
-      S.saveState = state => fs.setDoc(fs.doc(db, ...base, 'meta', 'state'), state);
-    } catch(e){
-      setStatus('error', e.code === 'auth/admin-restricted-operation' || e.code === 'auth/operation-not-allowed' ? 'turn on Anonymous sign-in in Firebase Authentication' : (e.message || String(e)));
+async function api(path, opts){
+  let r;
+  try { r = await fetch(`${BASE}/api/${S.room}${path}`, opts); }
+  catch(e){ throw new Error('can\'t reach the sync server'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `sync server error (${r.status})`);
+  return j;
+}
+const listOf = k => [...items[k].values()].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+const strip = it => { const o = Object.assign({}, it); delete o.__u; return o; };
+
+async function poll(g){
+  if (g !== gen) return;
+  clearTimeout(timer);
+  try {
+    const added = { letters: [], photos: [], voice: [] }, changed = new Set();
+    let since = Math.max(0, cursor - 3000), more = true, state = null;
+    while (more){
+      const j = await api(`/sync?since=${since}`);
+      if (g !== gen) return;
+      state = j.state;
+      for (const r of j.items){
+        const m = items[r.kind]; if (!m) continue;
+        const old = m.get(r.id);
+        if (!old && !first && !mine.has(r.id)) added[r.kind].push(Object.assign({}, r.item, { id: r.id }));
+        if (!old || old.__u !== r.updated){ m.set(r.id, Object.assign({}, r.item, { id: r.id, __u: r.updated })); changed.add(r.kind); }
+        cursor = Math.max(cursor, r.updated); since = r.updated;
+      }
+      more = j.more;
     }
-  };
-  S.disconnect = keepStatus => {
-    unsubs.forEach(u => u()); unsubs = [];
-    S.add = null; S.saveState = null;
-    if (!keepStatus){ S.room = null; try { localStorage.removeItem('riri-room'); } catch(e){} setStatus('off'); }
-  };
+    if (first) KINDS.forEach(k => changed.add(k));
+    changed.forEach(k => emit('sync:items', { kind: k, items: listOf(k).map(strip), added: added[k] }));
+    const sts = state ? state.ts : 0;
+    if (first || sts !== lastStateTs){ lastStateTs = sts; emit('sync:state', state); }
+    first = false;
+    if (S.status !== 'on') setStatus('on');
+  } catch(e){
+    if (g !== gen) return;
+    setStatus('error', e.message);
+  }
+  timer = setTimeout(() => poll(g), document.hidden ? 20000 : 4000);
+}
 
+S.connect = room => {
+  room = String(room || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{16,64}$/.test(room)) { setStatus('error', 'pair code must be 16+ letters, numbers or dashes'); return; }
+  S.disconnect(true);
+  reset(); S.room = room; gen++;
+  try { localStorage.setItem('riri-room', room); } catch(e){}
+  S.add = async (kind, item) => {
+    const it = Object.assign({}, item); delete it.local;
+    mine.add(it.id);
+    items[kind].set(it.id, Object.assign({}, it, { __u: 0 }));      // show it right away
+    await api('/items', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ kind, item: it }) });
+  };
+  S.saveState = st => api('/state', { method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(st) });
+  setStatus('connecting');
+  poll(gen);
+};
+S.disconnect = keepRoom => {
+  gen++; clearTimeout(timer);
+  S.add = null; S.saveState = null;
+  if (!keepRoom){ S.room = null; try { localStorage.removeItem('riri-room'); } catch(e){} setStatus('off'); }
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.room && S.add) poll(gen); });
+
+if (!S.configured) setStatus('unconfigured');
+else {
   let saved = null;
   try { saved = localStorage.getItem('riri-room'); } catch(e){}
-  const join = (location.hash.match(/join=([\w-]{16,})/) || [])[1];
-  if (join){ saved = join; history.replaceState(null, '', location.pathname + location.search); }
+  const join = (location.hash.match(/join=([a-z0-9-]{16,64})/i) || [])[1];
+  if (join){ saved = join.toLowerCase(); history.replaceState(null, '', location.pathname + location.search); }
   if (saved) S.connect(saved); else setStatus('off');
 }
 emit('sync:ready', {});

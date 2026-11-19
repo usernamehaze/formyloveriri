@@ -1129,7 +1129,7 @@ function renderSync(){
   const whoChips = `<div class="lbl">this phone belongs to…</div>
     <div class="chips"><button class="chip" data-who="riri">🎀 ${esc(chars[0].name)}</button><button class="chip" data-who="me">👓 ${esc(chars[1].name)}</button></div>`;
   if (!S.configured){
-    body.innerHTML = `<div class="empty">sync isn't set up yet 🛠️<br><small>add your Firebase settings to <b>sync-config.js</b>.<br>steps are in README.md</small></div>${whoChips}`;
+    body.innerHTML = `<div class="empty">sync isn't set up yet 🛠️<br><small>add your Cloudflare Worker address to <b>sync-config.js</b>.<br>steps are in README.md</small></div>${whoChips}`;
   } else if (S.status === 'on' || S.status === 'connecting'){
     body.innerHTML = `<div class="stline">${S.status === 'on' ? '🟢' : '🟡'} <b>${S.status === 'on' ? 'synced! your phones are connected 💕' : 'connecting…'}</b></div>
       <div class="lbl">your secret pair code</div><input class="field" readonly value="${esc(S.room || '')}">

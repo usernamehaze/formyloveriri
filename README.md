@@ -53,37 +53,42 @@ Use lowercase file names with no spaces. GitHub Pages updates about a minute aft
 
 ## 🔗 Syncing between your phones
 
-With sync on, letters, photos, voice notes and the pets' stats (hunger, love meter…) are shared live.
-It uses a free Firebase database in **your own** Google account. Setup takes about 5 minutes and only has to be done once.
+With sync on, letters, photos, voice notes and the pets' stats (hunger, love meter…) are shared between your phones.
+New things show up on the other phone within a few seconds.
+It runs on a free **Cloudflare Worker** plus a **D1** database in your own Cloudflare account. You only set it up once.
 
 ### 1. Create the database
-1. Go to **https://console.firebase.google.com** → **Create a project** → name it (e.g. `riri-and-me`). You can turn Google Analytics off.
-2. Left menu: **Build → Firestore Database → Create database**. Pick a location near you, and choose **production mode**.
-3. Open the **Rules** tab, replace everything with this, then click **Publish**:
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /rooms/{room}/{rest=**} {
-         allow read, write: if request.auth != null && room.size() >= 16;
-       }
-     }
-   }
-   ```
-4. Left menu: **Build → Authentication → Get started → Sign-in method → Anonymous → Enable → Save**.
-5. Still in Authentication: **Settings → Authorized domains → Add domain** → `usernamehaze.github.io`.
+1. In the Cloudflare dashboard go to **Storage & Databases → D1 SQL Database → Create**.
+2. Name it `riri-sync` → **Create**. (You don't need to make any tables. The Worker does that itself.)
 
-### 2. Connect the game to it
-1. Click the ⚙️ gear (top left) → **Project settings** → scroll to **Your apps** → click the **`</>`** (Web) icon → give it a nickname → **Register app**.
-2. Copy the `firebaseConfig = { ... }` block it shows you.
-3. Open **`sync-config.js`** in this repo, and replace `window.FIREBASE_CONFIG = null;` with
-   `window.FIREBASE_CONFIG = { ...what you copied... };`, then commit.
-   (Or just send the config to Claude and it'll do it. These values aren't secret.)
+### 2. Create the Worker
+1. Go to **Workers & Pages → Create → Create Worker** (start from "Hello World").
+2. Name it `riri-sync` → **Deploy**.
+3. Click **Edit code**, delete everything, paste the whole contents of [`worker/worker.js`](worker/worker.js), then click **Deploy**.
+4. Go back to the Worker → **Settings → Bindings → Add → D1 database**:
+   - Variable name: **`DB`** (exactly this)
+   - D1 database: **`riri-sync`**
+   - **Save / Deploy**
+5. Open your Worker's address (shown on its page, like `https://riri-sync.yourname.workers.dev`).
+   You should see `{"ok":true,"app":"riri-and-me sync","db":true}`.
 
-### 3. Pair your phones
+### 3. Connect the game to it
+Open **`sync-config.js`** in this repo and change the line to your Worker's address, then commit:
+```js
+window.SYNC_URL = 'https://riri-sync.yourname.workers.dev';
+```
+(Or just send the address to Claude and it'll do it. The address isn't secret.)
+
+### 4. Pair your phones
 1. On your phone, open the game → tap **🔗** next to the title → pick who you are → **✨ new code** → **🔗 connect**.
 2. Tap **📤 send code to Riri** and text her the link.
 3. She opens the link → it connects automatically → she taps 🔗 and picks **🎀 Riri**.
 
 The green dot on 🔗 means you're synced. Keep the pair code private, because anyone with it can see your stuff.
 Letters and photos you made before syncing get moved into the shared box automatically.
+
+> Using the Wrangler CLI instead of the dashboard? `cd worker`, run `npx wrangler d1 create riri-sync`,
+> put the printed `database_id` into `wrangler.toml`, then run `npx wrangler deploy`.
+
+> Want the game itself on Cloudflare too? **Workers & Pages → Create → Pages → Connect to Git**, pick this repo
+> and the `claude/peaceful-sagan-4dxhbm` branch, with no build command and output folder `/`.

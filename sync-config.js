@@ -1,16 +1,6 @@
-// 🔗 Firebase settings for syncing between your phones.
-// Paste the "firebaseConfig" from Firebase (Project settings → Your apps → Web app) below.
-// These values are safe to be public: your data is protected by your secret pair code.
-// See README.md → "Syncing between your phones".
+// 🔗 Address of your Cloudflare Worker for syncing between your phones.
+// After creating the Worker (see README.md → "Syncing between your phones"), put its address here, e.g.
+//   window.SYNC_URL = 'https://riri-sync.yourname.workers.dev';
+// The address isn't secret: your data is protected by your secret pair code.
 
-window.FIREBASE_CONFIG = null;
-
-// Example (replace null above with your own):
-// window.FIREBASE_CONFIG = {
-//   apiKey: "AIza...",
-//   authDomain: "your-project.firebaseapp.com",
-//   projectId: "your-project",
-//   storageBucket: "your-project.appspot.com",
-//   messagingSenderId: "1234567890",
-//   appId: "1:1234567890:web:abc123"
-// };
+window.SYNC_URL = null;

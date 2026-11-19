@@ -1,0 +1,11 @@
+# Only needed if you deploy with the Wrangler CLI instead of the Cloudflare dashboard.
+#   npx wrangler d1 create riri-sync      → copy the database_id it prints into this file
+#   npx wrangler deploy
+name = "riri-sync"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "riri-sync"
+database_id = "PASTE-YOUR-DATABASE-ID-HERE"
