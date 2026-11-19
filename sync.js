@@ -57,7 +57,8 @@ async function poll(g){
     changed.forEach(k => emit('sync:items', { kind: k, items: listOf(k).map(strip), added: added[k] }));
     const sts = state ? state.ts : 0;
     if (first || sts !== lastStateTs){ lastStateTs = sts; emit('sync:state', state); }
-    first = false; fails = 0;
+    first = false; fails = 0; S.lastOk = Date.now(); S.live = live;
+    S.counts = { letters: items.letters.size, photos: items.photos.size, voice: items.voice.size };
     if (S.status !== 'on') setStatus('on');
     // realtime Worker: ask again right away (that request waits for the next change).
     // older Worker: check again in 2 s.

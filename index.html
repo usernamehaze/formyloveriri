@@ -348,12 +348,12 @@
     clearTimeout(window.__errT); window.__errT = setTimeout(() => t.classList.remove('show'), 7000);
   });
 </script>
-<script src="sync-config.js?v=20261120b"></script>
-<script src="content.js?v=20261120b"></script>
-<script src="js/icons.js?v=20261120b"></script>
-<script src="js/people.js?v=20261120b"></script>
-<script src="js/rooms.js?v=20261120b"></script>
-<script src="js/games.js?v=20261120b"></script>
+<script src="sync-config.js?v=20261120c"></script>
+<script src="content.js?v=20261120c"></script>
+<script src="js/icons.js?v=20261120c"></script>
+<script src="js/people.js?v=20261120c"></script>
+<script src="js/rooms.js?v=20261120c"></script>
+<script src="js/games.js?v=20261120c"></script>
 <script>
 (() => {
 'use strict';
@@ -1233,6 +1233,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
+const APP_V = '20261120c';
 // ---------- who's holding this phone + synced data ----------
 let who = fetchStore('riri-who', null);                      // 'riri' | 'me' | null
 const myId = () => who || chars[sel].id;
@@ -1532,7 +1533,8 @@ function showPhotos(idx){
     });
     newBtn(); return;
   }
-  const i = Math.min(idx || 0, list.length - 1), ph = list[i];
+  const i = Math.max(0, Math.min(idx > 0 ? idx : 0, list.length - 1)), ph = list[i];
+  if (!ph){ pv.innerHTML = `<div class="empty">no photos yet 📸</div>`; newBtn(); return; }
   pv.innerHTML = `<div class="locket"><img alt=""><div class="cap"></div></div><div class="lmeta"></div><div class="jtext"></div>
     <div class="prow"><button class="pbtn ghost" id="phEdit" style="flex:1">✏️ edit journal</button><button class="pbtn ghost" id="phFrame" style="flex:1">🖼️ frame it</button><button class="pbtn danger" id="phDel" aria-label="Delete">🗑️</button></div>
     <div class="thumbs" style="margin-top:10px"></div>`;
@@ -1758,12 +1760,21 @@ function renderSync(){
   if (!S.configured){
     body.innerHTML = `<div class="empty">sync isn't set up yet 🛠️<br><small>add your Cloudflare Worker address to <b>sync-config.js</b>.<br>steps are in README.md</small></div>${whoChips}`;
   } else if (S.status === 'on' || S.status === 'connecting'){
+    const ago = S.lastOk ? Math.round((Date.now() - S.lastOk) / 1000) : null, c = S.counts || {};
+    const pend = pendingCount();
     body.innerHTML = `<div class="stline">${S.status === 'on' ? '🟢' : '🟡'} <b>${S.status === 'on' ? 'synced! your phones are connected 💕' : 'connecting…'}</b></div>
+      <div class="hint" style="margin:-4px 0 10px">
+        ${S.live ? '⚡ realtime' : 'checking every 2s'} · last update ${ago === null ? '—' : ago + 's ago'}<br>
+        on the shared box: ${c.letters || 0} letters & journal pages · ${c.photos || 0} photos · ${c.voice || 0} voice notes<br>
+        ${pend ? `<b style="color:#d9435a">waiting to send from this phone: ${pend}</b> <button class="pbtn ghost" id="pushNow" style="padding:3px 8px;font-size:12px">send now</button><br>` : 'nothing waiting to send ✓<br>'}
+        this phone: ${esc(who ? nameOf(who) : 'not picked yet')} · app version ${APP_V}
+      </div>
       <div class="lbl">your secret pair code</div><input class="field" readonly value="${esc(S.room || '')}">
       <div class="prow"><button class="pbtn" id="shareCode">📤 send code to ${esc(chars[who === 'me' ? 0 : 1].name)}</button></div>
       ${whoChips}
       <div class="prow"><button class="pbtn ghost" id="unpair" style="flex:1">unpair this phone</button></div>
       <div class="hint">letters, photos, voice notes and your pets' stats are shared. keep the code secret, anyone with it can see your stuff.</div>`;
+    if ($('pushNow')) $('pushNow').onclick = () => { migrateLocal(); toast('sending… 📤'); };
     $('shareCode').onclick = async () => {
       const link = location.origin + location.pathname + '#join=' + S.room;
       const text = `join me in our little game 💕 ${link}`;
@@ -1792,13 +1803,27 @@ function renderSync(){
     b.onclick = () => { who = b.dataset.who; store('riri-who', who); sel = chars.indexOf(charById(who)); renderTabs(); renderSync(); };
   });
 }
-function migrateLocal(){
-  // first time this phone connects: move anything saved only on this phone into the shared box
-  [['letters', localLetters], ['photos', localPhotos], ['voice', localVoice]].forEach(([k, arr]) => {
-    if (!arr.length) return;
-    arr.slice().forEach(it => { it.id = it.id || newId(k); window.Sync.add(k, it).then(() => { const i = arr.indexOf(it); if (i >= 0) arr.splice(i, 1); store('riri-' + k, arr); }).catch(() => {}); });
-  });
+// anything saved only on this phone (made while offline / not paired) gets uploaded as soon as we're connected
+let migrating = false;
+const localArr = k => k === 'letters' ? localLetters : k === 'photos' ? localPhotos : localVoice;
+const pendingCount = () => localLetters.length + localPhotos.length + localVoice.length;
+async function migrateLocal(){
+  if (migrating || !synced() || !pendingCount()) return;
+  migrating = true;
+  try {
+    for (const k of ['letters', 'photos', 'voice']){
+      for (const it of localArr(k).slice()){
+        it.id = it.id || newId(k);
+        try { await window.Sync.add(k, it); } catch(e){ return; }        // still offline: try again later
+        const cur = localArr(k), at = cur.findIndex(x => x.id === it.id);
+        if (at >= 0){ cur.splice(at, 1); store('riri-' + k, cur); }
+        if (!remote[k].some(x => x.id === it.id)) remote[k].unshift(Object.assign({}, it));
+      }
+    }
+  } finally { migrating = false; updateBadge(); renderSync(); }
 }
+setInterval(migrateLocal, 15000);
+setInterval(() => { if ($('syncM').classList.contains('show') && window.Sync && Sync.status === 'on') renderSync(); }, 3000);
 window.addEventListener('sync:status', e => {
   syncBtn.dataset.s = e.detail.status;
   if (e.detail.status === 'on') migrateLocal();
@@ -1809,6 +1834,7 @@ window.addEventListener('sync:items', e => {
   const { kind, items, added } = e.detail;
   remote[kind] = items;
   if (kind === 'photos') drawBG();
+  if (pendingCount()) migrateLocal();
   const forMe = added.filter(it => it.from && it.from !== who);
   if (forMe.length){
     const it = forMe[0], n = nameOf(it.from);
@@ -1844,6 +1870,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
 requestAnimationFrame(frame);
 })();
 </script>
-<script type="module" src="sync.js?v=20261120b"></script>
+<script type="module" src="sync.js?v=20261120c"></script>
 </body>
 </html>
