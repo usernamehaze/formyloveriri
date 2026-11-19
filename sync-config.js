@@ -3,4 +3,4 @@
 //   window.SYNC_URL = 'https://riri-sync.yourname.workers.dev';
 // The address isn't secret: your data is protected by your secret pair code.
 
-window.SYNC_URL = null;
+window.SYNC_URL = 'https://riri-sync.failanzahazel.workers.dev';
