@@ -8,6 +8,13 @@
 window.LOVE = {
   pets: { cat: 'Mochi', dog: 'Sunny' },
 
+  // what you call each other (used in their speech bubbles)
+  nicknames: {
+    riri: ['pogi', 'my baby', 'my love', 'baby', 'love', 'sweetheart'],   // what Riri calls Me
+    me:   ['my baby', 'pretty', 'my love', 'love', 'baby', 'misis ko'],    // what Me calls Riri
+  },
+  // favourite foods live in index.html (search "FOODS"). Tell Claude if you want to add more.
+
   letters: [
     {
       date: '2026-11-19',

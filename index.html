@@ -61,10 +61,28 @@
   .btn b{font-size:20px; line-height:1.1; font-weight:400}
   .btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--line)}
   .btn.on{background:var(--pink); color:#fff; border-color:var(--pink-d)}
+  .btn[data-act]{background:var(--bc); border-color:var(--bd); box-shadow:0 3px 0 var(--bd); color:#4a2a35}
+  .btn[data-act]:active{box-shadow:0 1px 0 var(--bd)}
+  .btn[data-act].on{background:var(--bd); color:#fff; border-color:var(--bd)}
+  [data-act="feed"]{--bc:#ffd5dc; --bd:#ef8ea0}
+  [data-act="play"]{--bc:#fff0c2; --bd:#e8b744}
+  [data-act="bath"]{--bc:#d4ecff; --bd:#79b7e8}
+  [data-act="sleep"]{--bc:#e4dcff; --bd:#9b8ae0}
+  [data-act="talk"]{--bc:#d6f5e0; --bd:#6fc68f}
+  [data-act="hug"]{--bc:#ffd9ef; --bd:#e77fb8}
+  [data-act="box"]{--bc:#ffe3cc; --bd:#eb9b5c}
+  .tab:not(.on):first-child{background:#ffe6ec; border-color:#f5b8c7}
+  .tab:not(.on):last-child{background:#e3efff; border-color:#a9c8ee}
+  .tab.on:last-child{background:#86aee0; border-color:#5f8fcc}
+  #camBtn{background:#fff0c2 !important; border-color:#e8b744 !important}
+  .syncb{background:#d6f5e0 !important; border-color:#6fc68f !important}
   .dot{position:absolute; top:-6px; right:-4px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ff4f7e; color:#fff; font-size:11px; line-height:18px; display:none; box-shadow:0 0 0 2px var(--bg); animation:pulse 1.4s infinite}
   @keyframes pulse{50%{transform:scale(1.15)}}
-  #tray{position:absolute; left:50%; bottom:10px; transform:translateX(-50%); display:none; gap:6px; background:rgba(255,247,248,.95); border:2px solid #4a2a35; border-radius:12px; padding:6px; z-index:4}
-  #tray button{font-size:24px; background:none; border:0; cursor:pointer; padding:2px 4px}
+  #tray{position:absolute; left:6px; right:6px; bottom:8px; display:none; flex-wrap:wrap; justify-content:center; gap:5px; background:rgba(255,247,248,.97); border:2px solid #4a2a35; border-radius:14px; padding:6px 6px 8px; z-index:4}
+  #tray .trayt{width:100%; text-align:center; font-size:12px; color:#a07a86; font-weight:600}
+  #tray button{display:flex; flex-direction:column; align-items:center; gap:1px; min-width:52px; background:#fff; border:2px solid #f1cdd6; border-radius:10px; cursor:pointer; padding:4px 4px 3px; color:#4a2a35; font:inherit}
+  #tray button span{font-size:24px; line-height:1.1} #tray button small{font-size:10px; white-space:nowrap}
+  #tray button:active{transform:scale(.94)}
   #tray.show{display:flex}
 
   /* sheets */
@@ -178,8 +196,6 @@
       <div id="toast"></div>
       <div id="gamehud"><span id="gScore">🍒 0</span><span id="gTime">20</span></div>
       <div id="tray">
-        <button data-food="🍒">🍒</button><button data-food="🍓">🍓</button><button data-food="🍜">🍜</button>
-        <button data-food="🧋">🧋</button><button data-food="🍰">🍰</button><button data-food="🍙">🍙</button>
       </div>
     </div>
   </div>
@@ -218,6 +234,13 @@
 </div>
 <input type="file" id="fileIn" accept="image/*" hidden>
 
+<script>
+  // if anything breaks, show it on screen instead of silently freezing
+  window.addEventListener('error', e => {
+    const t = document.getElementById('toast'); if (!t) return;
+    t.textContent = '⚠️ ' + (e.message || 'something broke'); t.classList.add('show');
+  });
+</script>
 <script src="sync-config.js"></script>
 <script src="content.js"></script>
 <script>
@@ -261,12 +284,15 @@ const K = 140 / 838, PAIR_W = 692 * K, PAIR_TOP = GROUND - 140;
 const DEF = () => ({ hunger: 80, fun: 80, energy: 85, clean: 90 });
 const chars = [
   { id:'riri', name:'Riri', el:$('sprRiri'), sx0:0, sw:330, headY:82, cxImg:140, mouth:[156,216], pitch:1.55, stats:DEF(),
-    lines:['hehe that tickles!','i love you sm 💕','cherries are my fav 🍒','hold my hand?','you\'re so silly','hii babe!','kiss me? 😚','*giggles*','stay with me forever?'] },
+    lines:['hehe that tickles!','i love you {nick} 💕','hold my hand {nick}?','hii {nick}!','you\'re so pogi 😳','kiss me {nick}? 😚','*giggles*','stay with me forever, {nick}?','feed me strawberries 🍓','leche flan date? 🍮','i miss you {nick} 🥺','you\'re so silly {nick}'] },
   { id:'me', name:'Me', el:$('sprMe'), sx0:330, sw:362, headY:4, cxImg:530, mouth:[500,182], pitch:1.3, stats:DEF(),
-    lines:['you\'re my favorite person','👍👍','hehe stop that!','wanna get food?','you look cute today','i\'m so lucky','best day ever','love you {o} 💕'] },
+    lines:['hi {nick}!','you look so pretty today','i love you {nick} 💕','misis ko 💕','hehe stop that {nick}!','wanna get ramen? 🍜','coffee date? ☕','i\'m so lucky to have you','👍👍','best day ever with you {nick}'] },
 ];
-chars.forEach(c => Object.assign(c, { kind:'char', jy:0, vy:0, rot:0, grinT:0, eatT:0, wiggle:0, talking:false, listening:false, mouthAmp:0, fake:null }));
+chars.forEach(c => Object.assign(c, { kind:'char', jy:0, vy:0, rot:0, hx:0, wave:0, grinT:0, eatT:0, wiggle:0, talking:false, listening:false, mouthAmp:0, fake:null }));
 const charById = id => chars.find(c => c.id === id);
+// what each of you calls the other (edit in content.js)
+const NICK = Object.assign({ riri: ['pogi','my baby','my love','baby','love','sweetheart'], me: ['my baby','pretty','my love','love','baby','misis ko'] }, LOVE.nicknames || {});
+const nick = c => { const l = NICK[c.id] || [other(c).name]; return l[Math.floor(Math.random() * l.length)]; };
 const nameOf = id => (charById(id) || {}).name || id || '';
 let pairX = (W - PAIR_W) / 2;          // left edge of the pair (moves in the mini game)
 function geo(c){
@@ -431,7 +457,7 @@ function anchorOf(o){
   const g = geo(o); return [g.cx, g.headY - 3];
 }
 function say(o, text, ms = 2600, long = false){
-  if (o.kind === 'char') text = text.replace('{o}', other(o).name);
+  if (o.kind === 'char') text = text.replace(/\{nick\}/g, () => nick(o)).replace('{o}', other(o).name);
   const old = bubbles.get(o); if (old){ old.el.remove(); clearTimeout(old.tm); }
   const el = document.createElement('div');
   el.className = 'bubble in' + (long || text.length > 26 ? ' long' : '');
@@ -466,7 +492,7 @@ function renderTabs(){
     b.innerHTML = `${i === 0 ? '🎀' : '👓'} ${esc(c.name)} ${i === sel ? '<small>✏️</small>' : ''}`;
     b.onclick = () => {
       if (i === sel){ const n = prompt('Rename ' + c.name + ':', c.name); if (n && n.trim()){ c.name = n.trim().slice(0, 14); save(); } }
-      sel = i; renderTabs(); boop(880, .06);
+      sel = i; renderTabs(); renderTray(); boop(880, .06);
     };
     $('tabs').appendChild(b);
   });
@@ -482,9 +508,36 @@ function setOn(act, on){ document.querySelector(`[data-act="${act}"]`).classList
 
 // ---------- actions ----------
 const busy = () => game || bath || sleeping || reading || voicePlaying;
-const FOOD = { '🍒':[18,'cherries!! 🍒'], '🍓':[14,'so sweet~'], '🍜':[30,'ramen time!'], '🧋':[16,'boba >>>'], '🍰':[22,'cake is life'], '🍙':[24,'nom nom'] };
+// favourite foods (edit in content.js)
+const FOODS = Object.assign({
+  riri: [
+    { e:'🍓', name:'strawberry', v:16, line:'strawberries!! my fav 🍓' },
+    { e:'🍒', name:'cherries',   v:16, line:'cherries 🍒💕' },
+    { e:'🍊', name:'orange',     v:14, line:'so juicy 🍊' },
+    { e:'🍦', name:'ice cream',  v:18, line:'ice cream!!! thank you {nick} 🍦' },
+    { e:'🍮', name:'leche flan', v:20, line:'leche flan 🥺💛' },
+    { e:'🍲', name:'sinigang',   v:30, line:'sinigang, sarap! 🍲' },
+    { e:'🍛', name:'adobo',      v:30, line:'adobo is life 🍛' },
+  ],
+  me: [
+    { e:'🍜', name:'ramen',    v:30, line:'ramen time! 🍜' },
+    { e:'🍗', name:'chicken',  v:26, line:'chicken!! thank you {nick} 🍗' },
+    { e:'🧋', name:'milk tea', v:16, line:'milk tea >>> 🧋' },
+    { e:'☕', name:'coffee',   v:12, line:'coffee, finally ☕' },
+  ],
+}, LOVE.foods || {});
+function renderTray(){
+  const tr = $('tray'), c = chars[sel];
+  tr.innerHTML = `<div class="trayt">${esc(c.name)}'s favorites</div>`;
+  (FOODS[c.id] || []).forEach(fd => {
+    const b = document.createElement('button');
+    b.innerHTML = `<span>${fd.e}</span><small>${esc(fd.name)}</small>`;
+    b.onclick = () => { flying.push({ e: fd.e, food: fd, x: 90, y: H - 18, c: chars[sel], t: 0 }); boop(500, .06); };
+    tr.appendChild(b);
+  });
+}
 const actions = {
-  feed(){ if (busy()) return toast('not right now!'); $('tray').classList.toggle('show'); setOn('feed', $('tray').classList.contains('show')); },
+  feed(){ if (busy()) return toast('not right now!'); renderTray(); $('tray').classList.toggle('show'); setOn('feed', $('tray').classList.contains('show')); },
   play(){
     if (sleeping) return toast('shh… sleeping 💤');
     if (game) return endGame();
@@ -514,9 +567,10 @@ const actions = {
   hug(){
     if (busy()) return toast('not right now!');
     hugT = 2.6; love = clamp(love + 8);
-    chars.forEach(c => { c.stats.fun = clamp(c.stats.fun + 4); c.vy = -55; c.jy = -1; const g = geo(c); hearts(g.cx, g.headY + 10, 6); });
+    chars.forEach(c => { c.stats.fun = clamp(c.stats.fun + 4); c.vy = -75; c.jy = -1; });
+    [0, 350, 700, 1100].forEach(ms => setTimeout(() => hearts(90, PAIR_TOP + 30, 5), ms));
     pets.forEach(q => { q.happyT = 2; q.vy = -50; q.jy = -1; });
-    const l = [['hug!! 🤗','come here you'],['mwah 😚','hehe 💕'],['i missed you','me too 🥺'],['my favorite person','no, MY favorite 💕']][Math.floor(Math.random() * 4)];
+    const l = [['hug me {nick}!! 🤗','come here {nick}'],['mwah 😚','hehe i love you {nick} 💕'],['i missed you {nick}','missed you more {nick} 🥺'],['you\'re my favorite person','no, YOU are {nick} 💕']][Math.floor(Math.random() * 4)];
     say(chars[0], l[0]); setTimeout(() => say(chars[1], l[1]), 700);
     boop(660, .1, 'sine', .06, 1.5); setTimeout(() => boop(880, .15, 'sine', .06, 1.5), 140);
     save();
@@ -524,11 +578,6 @@ const actions = {
   box(){ $('tray').classList.remove('show'); setOn('feed', false); openBox(); },
 };
 document.querySelectorAll('.btn').forEach(b => b.onclick = () => { ac(); actions[b.dataset.act](); });
-document.querySelectorAll('#tray button').forEach(b => b.onclick = () => {
-  const c = chars[sel], g = geo(c);
-  flying.push({ e: b.dataset.food, x: 90, y: H - 18, c, t: 0 });
-  boop(500, .06);
-});
 function endGame(){
   const c = chars[sel], g = game; game = null;
   $('gamehud').style.display = 'none'; setOn('play', false);
@@ -603,7 +652,7 @@ fx.addEventListener('pointerdown', e => {
   if (bath){ scrub(x, y); return; }
   const i = chars.indexOf(c); if (i !== sel){ sel = i; renderTabs(); }
   if (sleeping){ say(c, ['5 more minutes…','zzz… mm?','*snore*'][Math.floor(Math.random() * 3)], 1600); return; }
-  c.vy = -70; c.jy = -1; c.grinT = 1.6; c.wiggle = .6;
+  c.vy = -95; c.jy = -1; c.grinT = 1.6; c.wiggle = .7;
   c.stats.fun = clamp(c.stats.fun + 2); love = clamp(love + .5);
   const g = geo(c); hearts(g.cx, g.headY + 6, 3);
   say(c, mood(c) < 30 ? lowLine(c) : c.lines[Math.floor(Math.random() * c.lines.length)]);
@@ -631,8 +680,8 @@ function lowLine(c){
 }
 
 // ---------- main loop ----------
-let last = performance.now(), saveT = 0, chatT = 16, secT = 0;
-function frame(now){
+let last = performance.now(), saveT = 0, chatT = 16, secT = 0, idleT = 3;
+function step(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   decay(dt);
   const s = wrap.clientWidth / W;
@@ -646,9 +695,11 @@ function frame(now){
     c.grinT -= dt; c.eatT -= dt; c.wiggle -= dt;
     if (c.talking) c.mouthAmp = c.fake ? (c.fake() ? (Math.sin(t * 17) + 1) * .4 + .1 : 0) : micLevel();
     else c.mouthAmp = 0;
-    let rot = 0, sx = 1, sy = 1 + Math.sin(t * 2.2 + i * 1.7) * .006;
-    if (hugT > 0) rot = i === 0 ? 5 : -5;
-    if (c.wiggle > 0) rot += Math.sin(t * 30) * 3;
+    let rot = Math.sin(t * 1.4) * 1.2, sx = 1, sy = 1 + Math.sin(t * 2.2 + i * 1.7) * .012;
+    let hx = 0;
+    if (hugT > 0){ const k = Math.min(1, (2.6 - hugT) * 4, hugT * 3); hx = (i === 0 ? 7 : -7) * k; rot = (i === 0 ? 9 : -9) * k; sx += .04 * k; }
+    if (c.wiggle > 0) rot += Math.sin(t * 30) * 5;
+    if (c.wave > 0) rot += Math.sin(t * 14) * 6;
     if (c.eatT > 0){ const k = (Math.sin(t * 18) + 1) / 2; sy -= k * .035; sx += k * .02; }
     if (c.mouthAmp > .05){ sy += c.mouthAmp * .035; sx -= c.mouthAmp * .015; }
     if (c.listening) rot = (i === 0 ? 1 : -1) * 3;
@@ -657,8 +708,21 @@ function frame(now){
     const g = geo(c);
     const el = c.el;
     el.style.left = g.left * s + 'px'; el.style.top = PAIR_TOP * s + 'px'; el.style.width = g.w * s + 'px';
-    el.style.transform = `translateY(${c.jy * s}px) rotate(${c.rot}deg) scale(${sx},${sy})`;
+    c.hx = (c.hx || 0) + (hx - (c.hx || 0)) * Math.min(1, dt * 12);
+    el.style.transform = `translate(${c.hx * s}px, ${c.jy * s}px) rotate(${c.rot}deg) scale(${sx},${sy})`;
+    c.wave -= dt;
   });
+  // every few seconds someone does a little something on their own
+  idleT -= dt;
+  if (idleT < 0){
+    idleT = 4 + Math.random() * 5;
+    if (!busy() && hugT <= 0){
+      const c = chars[Math.floor(Math.random() * 2)], r = Math.random();
+      if (r < .4){ c.vy = -55; c.jy = -1; }
+      else if (r < .75) c.wave = 1.1;
+      else { c.vy = -45; c.jy = -1; c.wiggle = .5; const g = geo(c); hearts(g.cx, g.headY + 6, 2); }
+    }
+  }
   hugT -= dt;
   pets.forEach(q => {
     q.vy += 400 * dt; q.jy = Math.min(0, q.jy + q.vy * dt); if (q.jy === 0) q.vy = 0;
@@ -676,7 +740,7 @@ function frame(now){
     f.t += dt * 1.8; const k = Math.min(1, f.t), g = geo(f.c);
     f.cx = f.x + (g.mx - f.x) * k; f.cy = f.y + (g.my - f.y) * k - Math.sin(k * Math.PI) * 50;
     if (k >= 1){
-      const [v, line] = FOOD[f.e], c = f.c;
+      const v = f.food.v, line = f.food.line, c = f.c;
       c.eatT = 1.3; c.stats.hunger = clamp(c.stats.hunger + v); c.stats.energy = clamp(c.stats.energy + 2);
       setTimeout(() => { say(c, line); const g2 = geo(c); hearts(g2.cx, g2.headY + 6, 2); c.grinT = 1.2; }, 1300);
       for (let i = 0; i < 4; i++) setTimeout(() => boop(300 + Math.random() * 80, .05, 'square', .04), i * 280);
@@ -755,6 +819,11 @@ function frame(now){
   placeBubbles();
   secT += dt; if (secT > .5){ secT = 0; renderStats(); }
   saveT += dt; if (saveT > 10){ saveT = 0; save(false); }
+}
+let frameErr = false;
+function frame(now){
+  try { step(now); }
+  catch(e){ if (!frameErr){ frameErr = true; toast('⚠️ ' + e.message, 6000); console.error(e); } last = now; }
   requestAnimationFrame(frame);
 }
 
@@ -939,14 +1008,15 @@ function showCompose(){
 function readLetter(l){
   stopMessages();
   const reader = charById(l.from) || chars[1], listener = other(reader);
-  const parts = (l.body || '').split(/\n+|(?<=[.!?…])\s+/).map(x => x.trim()).filter(Boolean);
+  const parts = [];
+  (l.body || '').split(/\n+/).forEach(par => (par.match(/[^.!?…]+[.!?…]*/g) || []).forEach(x => { x = x.trim(); if (x) parts.push(x); }));
   const sp = window.speechSynthesis;
   const r = reading = { i: 0, speaking: false };
   reader.talking = true; reader.fake = () => r.speaking;
   toast('tap anywhere to stop', 1800);
   const next = () => {
     if (reading !== r) return;
-    if (r.i >= parts.length){ finishMessage(reader, listener === chars[0] ? 'i love you too 🥺💕' : 'i love you more 🥺💕'); return; }
+    if (r.i >= parts.length){ finishMessage(reader, 'i love you too {nick} 🥺💕'); return; }
     const line = parts[r.i++];
     say(reader, line, 60000, true);
     if (Math.random() < .5){ const g = geo(listener); hearts(g.cx, g.headY + 6, 2); }
@@ -977,7 +1047,7 @@ function playVoice(v){
   } catch(e){ sp.fake = () => !audio.paused; }
   sp.talking = true;
   say(sp, '🎧 ' + (v.title || 'voice note'), 600000, true);
-  audio.onended = () => finishMessage(sp, 'aww 🥺💕');
+  audio.onended = () => finishMessage(sp, 'aww {nick} 🥺💕');
   audio.onerror = () => { stopMessages(); say(sp, 'oops, that one won\'t play 😭'); };
   audio.play().catch(() => { stopMessages(); say(sp, 'tap again to play 🎧'); });
   toast('tap anywhere to stop', 1800);
