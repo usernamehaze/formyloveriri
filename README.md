@@ -85,6 +85,11 @@ window.SYNC_URL = 'https://riri-sync.yourname.workers.dev';
 ```
 (Or just send the address to Claude and it'll do it. The address isn't secret.)
 
+### Updating the Worker (for realtime)
+When the Worker code changes, open your Worker in Cloudflare → **Edit code**, replace everything with the new
+[`worker/worker.js`](worker/worker.js) and click **Deploy**. Your data stays. With the latest version, letters, photos
+and journal pages show up on the other phone in about a second.
+
 ### 4. Pair your phones
 1. On your phone, open the game → tap **🔗** next to the title → pick who you are → **✨ new code** → **🔗 connect**.
 2. Tap **📤 send code to Riri** and text her the link.

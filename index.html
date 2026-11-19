@@ -158,12 +158,17 @@
   .env .to{position:absolute; left:10px; bottom:6px; font-family:Caveat, cursive; font-size:21px; font-weight:700; z-index:3}
   .env .meta{position:absolute; right:8px; bottom:9px; font-size:10px; color:#8a6070; z-index:3}
   .env .new{position:absolute; top:6px; right:6px; z-index:4}
-  .env.opened .flap{transform:rotateX(180deg); opacity:.55}
-  .env.opened .seal{opacity:0}
-  .env.opened .paper-peek{transform:translateY(0)}
-  .env.opening .flap{transform:rotateX(180deg)}
-  .env.opening .seal{opacity:0}
-  .env.opening .paper-peek{transform:translateY(-20%)}
+  .envs .env{overflow:visible !important; clip-path:none !important; margin-top:34px; margin-bottom:10px}
+  .env .paper-peek{z-index:1; transform:translateY(40%); opacity:0; transition:transform .5s steps(5) .15s, opacity .1s .15s}
+  .env .front{z-index:2} .env .to,.env .meta{z-index:3}
+  .env .flap{z-index:4; transition:transform .45s steps(5)}
+  .env:not(.opened) .flap{box-shadow:inset 0 -2px 0 rgba(74,42,53,.12)}
+  .env.opened .flap,.env.opening .flap{transform:rotateX(180deg); z-index:0; filter:brightness(.93)}
+  .env.opened .seal,.env.opening .seal{opacity:0}
+  .env.opened .paper-peek{transform:translateY(-30%); opacity:1}
+  .env.opening .paper-peek{transform:translateY(-55%); opacity:1}
+  .env .rstate{position:absolute; bottom:-17px; right:0; font-size:10px; font-weight:700; color:#8a6070; z-index:5}
+  .env.opened .rstate{color:#e0446a}
   .envlabel{font-size:12px; color:var(--muted); margin:4px 0 8px}
   .paper{background:#fffdf6; color:#4a2a35; border-radius:6px; padding:16px 18px 18px; box-shadow:0 3px 0 #ead9c2;
          background-image:repeating-linear-gradient(#fffdf6 0 27px,#f3dfe4 27px 28px); border-left:4px solid #f49ab0; font-family:Caveat, cursive; animation:up .3s ease-out}
@@ -343,12 +348,12 @@
     clearTimeout(window.__errT); window.__errT = setTimeout(() => t.classList.remove('show'), 7000);
   });
 </script>
-<script src="sync-config.js?v=20261120a"></script>
-<script src="content.js?v=20261120a"></script>
-<script src="js/icons.js?v=20261120a"></script>
-<script src="js/people.js?v=20261120a"></script>
-<script src="js/rooms.js?v=20261120a"></script>
-<script src="js/games.js?v=20261120a"></script>
+<script src="sync-config.js?v=20261120b"></script>
+<script src="content.js?v=20261120b"></script>
+<script src="js/icons.js?v=20261120b"></script>
+<script src="js/people.js?v=20261120b"></script>
+<script src="js/rooms.js?v=20261120b"></script>
+<script src="js/games.js?v=20261120b"></script>
 <script>
 (() => {
 'use strict';
@@ -1327,6 +1332,11 @@ function showTab(tab, idx){
     body.appendChild(row);
   });
 }
+function letterRead(l){
+  if (l.read) return true;
+  const iAmRecipient = !who || who === l.to;
+  return iAmRecipient && seen.has(ikey('letters', l));
+}
 function showEnvelopes(){
   const body = $('boxBody');
   const all = lists.letters();
@@ -1342,19 +1352,20 @@ function showEnvelopes(){
   const list = all.filter(l => envFilter === 'all' || l.to === envFilter);
   if (!list.length){ grid.outerHTML = `<div class="empty">no letters here yet 💭</div>`; return; }
   list.forEach(l => {
-    const opened = seen.has(ikey('letters', l));
+    const opened = letterRead(l), mineSent = who && l.from === who;
     const fromRiri = l.from === 'riri';
     const e = document.createElement('button');
     e.className = 'env' + (opened ? ' opened' : '');
     e.style.setProperty('--ec', fromRiri ? '#ffd9e3' : '#d6e7f8');
     e.style.setProperty('--ef', fromRiri ? '#ffc2d3' : '#bcd6f1');
     e.innerHTML = `<div class="paper-peek"></div><div class="front"></div><div class="flap"></div><div class="seal">${fromRiri ? '🎀' : '💗'}</div>
-      <div class="to">to ${esc(nameOf(l.to))}</div><div class="meta">${esc(fmtDate(l.date))}</div>${opened ? '' : '<span class="new">NEW</span>'}`;
+      <div class="to">to ${esc(nameOf(l.to))}</div><div class="meta">${esc(fmtDate(l.date))}</div>
+      ${mineSent ? `<span class="rstate">${opened ? 'read 💕' : 'not opened yet'}</span>` : (opened ? '' : '<span class="new">NEW</span>')}`;
     e.title = l.title || '';
     e.onclick = () => {
       boop(opened ? 760 : 520, .12, 'sine', .05, 1.6);
-      if (opened) return showLetter(l);
-      e.classList.add('opening'); setTimeout(() => showLetter(l), 520);
+      if (opened || mineSent) return showLetter(l);
+      e.classList.add('opening'); setTimeout(() => showLetter(l), 650);
     };
     grid.appendChild(e);
   });
@@ -1363,6 +1374,8 @@ function showEnvelopes(){
 }
 function showLetter(l){
   markSeen('letters', l);
+  // tell the sender it was read (shows on both phones)
+  if (!l.read && (!who || who === l.to)) l = editItem('letters', l, { read: Date.now() });
   const reader = charById(l.from) || chars[1];
   const body = $('boxBody'); body.scrollTop = 0;
   body.innerHTML = `<div class="paper"><div class="ld"></div><h3></h3><div class="lb"></div><div class="sg"></div></div>
@@ -1408,8 +1421,8 @@ function showCompose(){
     addItem('letters', l);
     seen.add(ikey('letters', l)); store('riri-seen', [...seen]); updateBadge();
     boop(520, .15, 'sine', .05, 2);
-    body.innerHTML = `<div class="empty">💌<br>sealed &amp; saved!</div>
-      <div class="prow"><button class="pbtn ghost" id="sBack">← letters</button><button class="pbtn" id="sSend">📤 send it</button></div>`;
+    body.innerHTML = `<div class="compose"><div class="empty">💌<br>sealed &amp; ${synced() ? 'sent to ' + esc(nameOf(l.to)) + '!' : 'saved!'}</div>
+      <div class="prow"><button class="pbtn ghost" id="sBack">← letters</button><button class="pbtn" id="sSend">📤 send it</button></div></div>`;
     $('sBack').onclick = () => showTab('letters');
     $('sSend').onclick = async () => {
       const msg = `💌 ${l.title}\n\n${l.body}\n\n— ${nameOf(l.from)}`;
@@ -1831,6 +1844,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
 requestAnimationFrame(frame);
 })();
 </script>
-<script type="module" src="sync.js?v=20261120a"></script>
+<script type="module" src="sync.js?v=20261120b"></script>
 </body>
 </html>
