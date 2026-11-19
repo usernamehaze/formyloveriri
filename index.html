@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Riri &amp; Me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,8 @@
   }
   :root[data-theme="dark"]{ --bg:#2a1d24; --panel:#3a2832; --ink:#ffe9ef; --muted:#c49aa9; --line:#5a3d4a; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%}
+  html,body{margin:0;height:100%; touch-action:manipulation; -webkit-text-size-adjust:100%; text-size-adjust:100%; overscroll-behavior:none}
+  input,textarea,select{font-size:16px !important}
   body{background:var(--bg); color:var(--ink); font-family:"Pixelify Sans", ui-monospace, monospace;
        display:flex; justify-content:center; user-select:none; -webkit-user-select:none; overflow:hidden}
   #app{width:100%; max-width:440px; height:100%; display:flex; flex-direction:column; padding:10px 12px 12px; gap:8px}
@@ -189,8 +190,6 @@
   <div id="stage">
     <div id="wrap">
       <canvas id="bgc" width="180" height="260"></canvas>
-      <img class="spr" id="sprRiri" src="img/riri.png" alt="Riri">
-      <img class="spr" id="sprMe" src="img/me.png" alt="Me">
       <canvas id="fx" width="180" height="260"></canvas>
       <button id="camBtn" aria-label="Camera">📷</button>
       <div id="toast"></div>
@@ -235,6 +234,18 @@
 <input type="file" id="fileIn" accept="image/*" hidden>
 
 <script>
+  // keep the page from zooming in/out on phones (pinch, double-tap)
+  ['gesturestart','gesturechange','gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  let lastTouch = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouch < 320 && !e.target.closest('input,textarea')) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+  document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+</script>
+<script>
   // if anything breaks, show it on screen instead of silently freezing
   window.addEventListener('error', e => {
     const t = document.getElementById('toast'); if (!t) return;
@@ -243,6 +254,8 @@
 </script>
 <script src="sync-config.js"></script>
 <script src="content.js"></script>
+<script src="js/people.js"></script>
+<script src="js/games.js"></script>
 <script>
 (() => {
 'use strict';
@@ -278,28 +291,35 @@ function outline(c2){
   x2.putImageData(img, 0, 0);
 }
 
-// ---------- the two of you (sprites cut from your picture) ----------
-// Source art is 692x838 px (riri.png = left 330px, me.png = right 362px).
-const K = 140 / 838, PAIR_W = 692 * K, PAIR_TOP = GROUND - 140;
+// ---------- the two of you (hand-drawn pixel art, see js/people.js) ----------
 const DEF = () => ({ hunger: 80, fun: 80, energy: 85, clean: 90 });
+const PD = People.DEF;
 const chars = [
-  { id:'riri', name:'Riri', el:$('sprRiri'), sx0:0, sw:330, headY:82, cxImg:140, mouth:[156,216], pitch:1.55, stats:DEF(),
+  { id:'riri', name:'Riri', home:64, x:64, pitch:1.55, stats:DEF(),
     lines:['hehe that tickles!','i love you {nick} 💕','hold my hand {nick}?','hii {nick}!','you\'re so pogi 😳','kiss me {nick}? 😚','*giggles*','stay with me forever, {nick}?','feed me strawberries 🍓','leche flan date? 🍮','i miss you {nick} 🥺','you\'re so silly {nick}'] },
-  { id:'me', name:'Me', el:$('sprMe'), sx0:330, sw:362, headY:4, cxImg:530, mouth:[500,182], pitch:1.3, stats:DEF(),
+  { id:'me', name:'Me', home:116, x:116, pitch:1.3, stats:DEF(),
     lines:['hi {nick}!','you look so pretty today','i love you {nick} 💕','misis ko 💕','hehe stop that {nick}!','wanna get ramen? 🍜','coffee date? ☕','i\'m so lucky to have you','👍👍','best day ever with you {nick}'] },
 ];
-chars.forEach(c => Object.assign(c, { kind:'char', jy:0, vy:0, rot:0, hx:0, wave:0, grinT:0, eatT:0, wiggle:0, talking:false, listening:false, mouthAmp:0, fake:null }));
+chars.forEach(c => Object.assign(c, { kind:'char', d: PD[c.id], jy:0, vy:0, wave:0, cheer:0, grinT:0, eatT:0, held:null, wiggle:0, talking:false, listening:false, mouthAmp:0, fake:null, blink:0, nb:2 + Math.random() * 3, look:0, walking:false }));
 const charById = id => chars.find(c => c.id === id);
 // what each of you calls the other (edit in content.js)
 const NICK = Object.assign({ riri: ['pogi','my baby','my love','baby','love','sweetheart'], me: ['my baby','pretty','my love','love','baby','misis ko'] }, LOVE.nicknames || {});
 const nick = c => { const l = NICK[c.id] || [other(c).name]; return l[Math.floor(Math.random() * l.length)]; };
 const nameOf = id => (charById(id) || {}).name || id || '';
-let pairX = (W - PAIR_W) / 2;          // left edge of the pair (moves in the mini game)
+// scene spots
+const BED = { cx: 90, y: 148 }, TUB = { cx: 64, y: 202 };
+const SLEEP_HEAD = { riri: [37, 150], me: [88, 146] };
+function scene(){ return sleeping ? 'sleep' : bath ? 'bath' : hugT > 0 ? 'hug' : 'stand'; }
+// where things are right now (used for bubbles, taps, food, hearts…)
 function geo(c){
-  const left = pairX + c.sx0 * K;
-  return { left, top: PAIR_TOP + c.jy, w: c.sw * K, cx: pairX + c.cxImg * K, headY: PAIR_TOP + c.headY * K + c.jy,
-           mx: pairX + c.mouth[0] * K, my: PAIR_TOP + c.mouth[1] * K + c.jy };
+  const d = c.d, sc = scene();
+  if (sc === 'sleep'){ const [hx, hy] = SLEEP_HEAD[c.id]; return { left: hx + 8, w: d.w - 16, cx: hx + d.w / 2, headY: hy + 4, top: hy, mx: hx + d.mouth[0], my: hy + d.mouth[1] }; }
+  if (sc === 'bath' && bath.c === c){ const top = TUB.y + 4 - 50; return { left: TUB.cx - d.w / 2, w: d.w, cx: TUB.cx, headY: top, top, mx: TUB.cx - d.w / 2 + d.mouth[0], my: top + d.mouth[1] }; }
+  const left = c.x - d.w / 2, top = GROUND - d.h + c.jy;
+  return { left, w: d.w, cx: c.x, headY: top, top, mx: left + d.mouth[0], my: top + d.mouth[1] };
 }
+const layer = document.createElement('canvas'); layer.width = W; layer.height = H;
+const lctx = layer.getContext('2d');
 
 // ---------- pets ----------
 const PETN = LOVE.pets || {};
@@ -354,10 +374,10 @@ function drawDog(q, t){
   });
 }
 pets[0].draw = drawCat; pets[1].draw = drawDog;
-const petBox = q => ({ x: q.cx - q.w / 2, y: GROUND - q.h + q.jy, w: q.w, h: q.h });
+const petBox = q => ({ x: q.cx - q.w / 2, y: (q.gy || GROUND) - q.h + q.jy, w: q.w, h: q.h });
 
 // ---------- state ----------
-let sel = 0, love = 80, sleeping = false, hugT = 0, t = 0;
+let sel = 0, love = 80, sleeping = false, hugT = 0, hugKiss = false, t = 0;
 let particles = [], flying = [], bath = null, game = null, reading = null, voicePlaying = null;
 // stateTs = time of the last real action (feeding, hugging…). Only actions are shared, not the slow decay.
 let pushTimer = null, stateTs = 0;
@@ -479,7 +499,19 @@ function placeBubbles(){
     b.el.style.left = x + 'px'; b.el.style.top = y + 'px';
     const arrow = Math.max(14, Math.min(w - 14, ax * s - (x - w / 2)));
     b.el.style.setProperty('--ax', arrow + 'px');
+    b.box = { x, y, w, h };
   });
+  // don't let two bubbles sit on top of each other
+  const list = [...bubbles.values()].filter(b => b.box).sort((a, b) => b.box.y - a.box.y);
+  for (let i = 1; i < list.length; i++){
+    const a = list[i - 1].box, b = list[i].box;
+    const overlapX = Math.abs(a.x - b.x) < (a.w + b.w) / 2, overlapY = b.y > a.y - a.h - 4;
+    if (overlapX && overlapY){
+      b.y = a.y - a.h - 6;
+      if (b.y - b.h < 4) b.y = Math.min(sh - 6, a.y + b.h + 6);
+      list[i].el.style.top = b.y + 'px'; list[i].el.classList.add('noarrow');
+    }
+  }
 }
 let toastT;
 function toast(msg, ms = 2000){ const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), ms); }
@@ -532,7 +564,7 @@ function renderTray(){
   (FOODS[c.id] || []).forEach(fd => {
     const b = document.createElement('button');
     b.innerHTML = `<span>${fd.e}</span><small>${esc(fd.name)}</small>`;
-    b.onclick = () => { flying.push({ e: fd.e, food: fd, x: 90, y: H - 18, c: chars[sel], t: 0 }); boop(500, .06); };
+    b.onclick = () => { flying.push({ e: fd.e, food: fd, x: 90, y: H - 18, c: chars[sel], t: 0 }); boop(500, .06); tr.classList.remove('show'); setOn('feed', false); };
     tr.appendChild(b);
   });
 }
@@ -540,20 +572,16 @@ const actions = {
   feed(){ if (busy()) return toast('not right now!'); renderTray(); $('tray').classList.toggle('show'); setOn('feed', $('tray').classList.contains('show')); },
   play(){
     if (sleeping) return toast('shh… sleeping 💤');
-    if (game) return endGame();
-    if (busy()) return;
+    if (busy()) return toast('not right now!');
     const c = chars[sel];
     if (c.stats.energy < 10){ say(c, 'too tired… 😴'); return; }
-    game = { t: 20, score: 0, items: [], spawn: 0, x: W / 2 };
-    $('gamehud').style.display = 'flex'; setOn('play', true);
-    toast('drag to catch the cherries together!', 2500);
-    say(c, 'let\'s goooo!');
+    window.Games.open();
   },
   bath(){
     if (sleeping || game || reading || voicePlaying) return toast('not right now!');
     if (bath) return endBath();
     bath = { c: chars[sel], rinse: 0 }; setOn('bath', true);
-    toast('rub ' + chars[sel].name + ' to scrub! 🧼', 2500);
+    toast('rub ' + chars[sel].name + ' in the tub to scrub! 🧼', 2500);
   },
   sleep(){
     if (game || bath || reading || voicePlaying) return;
@@ -561,30 +589,38 @@ const actions = {
     bubbles.forEach(b => b.el.remove()); bubbles.clear();
     pets.forEach(q => q.sleepy = sleeping);
     if (sleeping){ toast('good night 🌙'); boop(440, .3, 'sine', .05, .5); }
-    else { chars.forEach(c => { c.grinT = 1.5; c.vy = -60; c.jy = -1; }); say(chars[0], 'good morning! ☀️'); boop(520, .25, 'sine', .05, 2); }
+    else { chars.forEach(c => { c.grinT = 1.5; c.cheer = 1.2; c.vy = -60; c.jy = -1; }); say(chars[0], 'good morning {nick}! ☀️'); boop(520, .25, 'sine', .05, 2); }
   },
   talk(){ talk(); },
   hug(){
     if (busy()) return toast('not right now!');
-    hugT = 2.6; love = clamp(love + 8);
-    chars.forEach(c => { c.stats.fun = clamp(c.stats.fun + 4); c.vy = -75; c.jy = -1; });
-    [0, 350, 700, 1100].forEach(ms => setTimeout(() => hearts(90, PAIR_TOP + 30, 5), ms));
+    hugT = 4.2; hugKiss = Math.random() < .4; love = clamp(love + 8);
+    chars.forEach(c => { c.stats.fun = clamp(c.stats.fun + 4); });
+    [900, 1400, 1900, 2500, 3100].forEach(ms => setTimeout(() => hearts(90, 150, 5), ms));
     pets.forEach(q => { q.happyT = 2; q.vy = -50; q.jy = -1; });
     const l = [['hug me {nick}!! 🤗','come here {nick}'],['mwah 😚','hehe i love you {nick} 💕'],['i missed you {nick}','missed you more {nick} 🥺'],['you\'re my favorite person','no, YOU are {nick} 💕']][Math.floor(Math.random() * 4)];
-    say(chars[0], l[0]); setTimeout(() => say(chars[1], l[1]), 700);
+    say(chars[0], hugKiss ? 'mwah 😚💋' : l[0]); setTimeout(() => say(chars[1], hugKiss ? 'hehe i love you {nick} 💕' : l[1]), 1300);
     boop(660, .1, 'sine', .06, 1.5); setTimeout(() => boop(880, .15, 'sine', .06, 1.5), 140);
     save();
   },
   box(){ $('tray').classList.remove('show'); setOn('feed', false); openBox(); },
 };
 document.querySelectorAll('.btn').forEach(b => b.onclick = () => { ac(); actions[b.dataset.act](); });
-function endGame(){
-  const c = chars[sel], g = game; game = null;
-  $('gamehud').style.display = 'none'; setOn('play', false);
-  chars.forEach(ch => { ch.stats.fun = clamp(ch.stats.fun + 6 + g.score * 1.5); ch.stats.energy = clamp(ch.stats.energy - 6); ch.stats.hunger = clamp(ch.stats.hunger - 3); ch.grinT = 2; });
-  say(c, g.score >= 15 ? `${g.score} points!! we're pros 😎` : `${g.score} points! again?`);
-  save();
-}
+// mini games call this when a round ends
+window.GameHost = {
+  who: () => chars[sel].id,
+  name: id => nameOf(id),
+  nick: id => nick(other(charById(id))),
+  boop: (...a) => boop(...a),
+  onFinish(res){
+    const c = chars[sel];
+    c.stats.fun = clamp(c.stats.fun + 12 + Math.min(30, res.score / 20)); c.stats.energy = clamp(c.stats.energy - 8); c.stats.hunger = clamp(c.stats.hunger - 5);
+    if (res.win) love = clamp(love + 6);
+    chars.forEach(ch => ch.grinT = 3);
+    setTimeout(() => say(c, res.win ? `we did it {nick}! 💞` : `${res.score} points! again?`), 400);
+    save();
+  },
+};
 function endBath(){ bath = null; setOn('bath', false); particles.forEach(q => { if (q.type === 'bubble') q.life = Math.min(q.life, .3); }); save(); }
 
 // ---------- talk (record + squeaky playback) ----------
@@ -652,7 +688,7 @@ fx.addEventListener('pointerdown', e => {
   if (bath){ scrub(x, y); return; }
   const i = chars.indexOf(c); if (i !== sel){ sel = i; renderTabs(); }
   if (sleeping){ say(c, ['5 more minutes…','zzz… mm?','*snore*'][Math.floor(Math.random() * 3)], 1600); return; }
-  c.vy = -95; c.jy = -1; c.grinT = 1.6; c.wiggle = .7;
+  c.vy = -95; c.jy = -1; c.grinT = 1.6; c.wiggle = .5; if (Math.random() < .5) c.cheer = 1; else c.wave = 1.2;
   c.stats.fun = clamp(c.stats.fun + 2); love = clamp(love + .5);
   const g = geo(c); hearts(g.cx, g.headY + 6, 3);
   say(c, mood(c) < 30 ? lowLine(c) : c.lines[Math.floor(Math.random() * c.lines.length)]);
@@ -686,44 +722,39 @@ function step(now){
   decay(dt);
   const s = wrap.clientWidth / W;
 
-  // pair position (moves together in the mini game)
-  const pairTarget = game ? Math.max(0, Math.min(W - PAIR_W, game.x - PAIR_W / 2)) : (W - PAIR_W) / 2;
-  pairX += (pairTarget - pairX) * Math.min(1, dt * (game ? 12 : 5));
-
+  // walking to where each person should be
+  const sc = scene();
+  const spot = c => sc === 'hug' ? (c.id === 'riri' ? 73 : 107) : sc === 'bath' && bath.c !== c ? 138 : c.home;
   chars.forEach((c, i) => {
     c.vy += 400 * dt; c.jy = Math.min(0, c.jy + c.vy * dt); if (c.jy === 0) c.vy = 0;
-    c.grinT -= dt; c.eatT -= dt; c.wiggle -= dt;
+    c.grinT -= dt; c.eatT -= dt; c.wiggle -= dt; c.wave -= dt; c.cheer -= dt;
+    if (c.eatT <= 0) c.held = null;
     if (c.talking) c.mouthAmp = c.fake ? (c.fake() ? (Math.sin(t * 17) + 1) * .4 + .1 : 0) : micLevel();
     else c.mouthAmp = 0;
-    let rot = Math.sin(t * 1.4) * 1.2, sx = 1, sy = 1 + Math.sin(t * 2.2 + i * 1.7) * .012;
-    let hx = 0;
-    if (hugT > 0){ const k = Math.min(1, (2.6 - hugT) * 4, hugT * 3); hx = (i === 0 ? 7 : -7) * k; rot = (i === 0 ? 9 : -9) * k; sx += .04 * k; }
-    if (c.wiggle > 0) rot += Math.sin(t * 30) * 5;
-    if (c.wave > 0) rot += Math.sin(t * 14) * 6;
-    if (c.eatT > 0){ const k = (Math.sin(t * 18) + 1) / 2; sy -= k * .035; sx += k * .02; }
-    if (c.mouthAmp > .05){ sy += c.mouthAmp * .035; sx -= c.mouthAmp * .015; }
-    if (c.listening) rot = (i === 0 ? 1 : -1) * 3;
-    if (sleeping) rot = (i === 0 ? 4 : -4), sy *= .985;
-    c.rot += (rot - c.rot) * Math.min(1, dt * 10);
-    const g = geo(c);
-    const el = c.el;
-    el.style.left = g.left * s + 'px'; el.style.top = PAIR_TOP * s + 'px'; el.style.width = g.w * s + 'px';
-    c.hx = (c.hx || 0) + (hx - (c.hx || 0)) * Math.min(1, dt * 12);
-    el.style.transform = `translate(${c.hx * s}px, ${c.jy * s}px) rotate(${c.rot}deg) scale(${sx},${sy})`;
-    c.wave -= dt;
+    c.nb -= dt; if (c.nb < 0){ c.blink = .13; c.nb = 2 + Math.random() * 4; } c.blink -= dt;
+    if (Math.random() < dt * .3) c.look = [-1, 0, 0, 1][Math.floor(Math.random() * 4)];
+    const tx = spot(c), dx = tx - c.x;
+    c.walking = Math.abs(dx) > .6 && sc !== 'sleep';
+    if (c.walking) c.x += Math.sign(dx) * Math.min(Math.abs(dx), 34 * dt);
   });
+  if (hugT > 0 && chars.every(c => !c.walking)) hugT -= dt;
+  else if (hugT > 0) hugT = Math.max(hugT, 3.5);
   // every few seconds someone does a little something on their own
   idleT -= dt;
   if (idleT < 0){
     idleT = 4 + Math.random() * 5;
     if (!busy() && hugT <= 0){
       const c = chars[Math.floor(Math.random() * 2)], r = Math.random();
-      if (r < .4){ c.vy = -55; c.jy = -1; }
-      else if (r < .75) c.wave = 1.1;
+      if (r < .3){ c.vy = -55; c.jy = -1; }
+      else if (r < .6) c.wave = 1.4;
+      else if (r < .8) c.cheer = 1.2;
       else { c.vy = -45; c.jy = -1; c.wiggle = .5; const g = geo(c); hearts(g.cx, g.headY + 6, 2); }
     }
   }
-  hugT -= dt;
+  // pets follow the scene
+  pets[0].gy = sc === 'sleep' ? 230 : GROUND; pets[0].tcx = sc === 'sleep' ? 136 : 17;
+  pets[1].gy = GROUND; pets[1].tcx = sc === 'sleep' ? 165 : 162;
+  pets.forEach(q => { q.cx += (q.tcx - q.cx) * Math.min(1, dt * 3); });
   pets.forEach(q => {
     q.vy += 400 * dt; q.jy = Math.min(0, q.jy + q.vy * dt); if (q.jy === 0) q.vy = 0;
     q.happyT -= dt; q.nb -= dt; if (q.nb < 0){ q.blink = .14; q.nb = 2 + Math.random() * 4; } q.blink -= dt;
@@ -738,10 +769,11 @@ function step(now){
   // food flying to the mouth
   flying = flying.filter(f => {
     f.t += dt * 1.8; const k = Math.min(1, f.t), g = geo(f.c);
-    f.cx = f.x + (g.mx - f.x) * k; f.cy = f.y + (g.my - f.y) * k - Math.sin(k * Math.PI) * 50;
+    const hx = g.mx + (f.c.id === 'riri' ? -6 : 7), hy = g.my + 3;
+    f.cx = f.x + (hx - f.x) * k; f.cy = f.y + (hy - f.y) * k - Math.sin(k * Math.PI) * 50;
     if (k >= 1){
       const v = f.food.v, line = f.food.line, c = f.c;
-      c.eatT = 1.3; c.stats.hunger = clamp(c.stats.hunger + v); c.stats.energy = clamp(c.stats.energy + 2);
+      c.eatT = 1.8; c.held = f.e; c.stats.hunger = clamp(c.stats.hunger + v); c.stats.energy = clamp(c.stats.energy + 2);
       setTimeout(() => { say(c, line); const g2 = geo(c); hearts(g2.cx, g2.headY + 6, 2); c.grinT = 1.2; }, 1300);
       for (let i = 0; i < 4; i++) setTimeout(() => boop(300 + Math.random() * 80, .05, 'square', .04), i * 280);
       if (Math.random() < .5){ const q = pets[Math.floor(Math.random() * 2)]; setTimeout(() => say(q, q.id === 'cat' ? 'share? 🥺🐟' : 'can i have some?? 🐾', 1600), 600); }
@@ -750,26 +782,6 @@ function step(now){
     return true;
   });
 
-  // mini game: catch with both of you
-  if (game){
-    const g = game;
-    g.t -= dt; g.spawn -= dt;
-    if (g.spawn < 0){ g.spawn = .45 + Math.random() * .35; const r = Math.random(); g.items.push({ x: 10 + Math.random() * 160, y: -10, v: 45 + Math.random() * 35 + (20 - g.t) * 2, e: r < .12 ? '💖' : r < .24 ? '🌶️' : '🍒' }); }
-    g.items = g.items.filter(it => {
-      it.y += it.v * dt;
-      const hitc = chars.find(c => { const gg = geo(c); return Math.abs(it.y - (gg.headY + 14)) < 12 && Math.abs(it.x - gg.cx) < 22; });
-      if (hitc){
-        const pts = it.e === '💖' ? 3 : it.e === '🌶️' ? -2 : 1;
-        g.score = Math.max(0, g.score + pts);
-        spawn('text', it.x - 4, it.y, { txt: (pts > 0 ? '+' : '') + pts, col: pts > 0 ? '#e9446f' : '#5b7bd6', vx: 0, vy: -20, life: .8, max: .8 });
-        if (pts < 0){ hitc.vy = -50; hitc.jy = -1; hitc.wiggle = .4; boop(200, .15, 'sawtooth', .04, .5); } else boop(700 + pts * 120, .07, 'square', .04, 1.5);
-        return false;
-      }
-      return it.y < H + 10;
-    });
-    $('gScore').textContent = '🍒 ' + g.score; $('gTime').textContent = '⏱ ' + Math.ceil(g.t);
-    if (g.t <= 0) endGame();
-  }
   if (bath && bath.rinse){
     bath.rinse -= dt;
     const g = geo(bath.c);
@@ -788,15 +800,18 @@ function step(now){
 
   // ---------- draw fx layer ----------
   ctx.clearRect(0, 0, W, H); P = ctx;
+  drawPeople(sc);
+  ctx.drawImage(layer, 0, 0);
+  chars.forEach(c => { if (c.held && c.eatT > .35 && sc !== 'sleep'){ const g = geo(c); ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(c.held, Math.round(g.mx + (c.id === 'riri' ? -6 : 7)), Math.round(g.my + 4)); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; } });
   // pets (pixel art with outline)
   pets.forEach(q => {
     pctx.clearRect(0, 0, 34, 34); q.draw(q, t); outline(petCanvas);
     const b = petBox(q);
-    ctx.drawImage(petCanvas, Math.round(q.cx - 17), Math.round(GROUND - 34 + 2 + q.jy));
+    ctx.drawImage(petCanvas, Math.round(q.cx - 17), Math.round((q.gy || GROUND) - 34 + 2 + q.jy));
   });
   P = ctx;
   // selection heart
-  if (!game && !sleeping){ const g = geo(chars[sel]); sprite(HEART, Math.round(g.cx - 2), Math.round(g.headY - 10 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
+  if (!sleeping && !bath && hugT <= 0){ const g = geo(chars[sel]); sprite(HEART, Math.round(g.cx - 2), Math.round(g.headY - 10 + Math.sin(t * 4) * 1.5), '#ff6f9a'); }
   // unread envelope on the polaroid
   if (totalUnread() > 0){
     const ey = Math.round(46 + Math.sin(t * 4) * 2);
@@ -806,12 +821,12 @@ function step(now){
     if (Math.sin(t * 6) > .6) spawn('spark', 36 + Math.random() * 14, ey - 2, { vx: 0, vy: -6, life: .5, max: .5 });
   }
   ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  if (game) game.items.forEach(it => ctx.fillText(it.e, Math.round(it.x), Math.round(it.y)));
   flying.forEach(f => ctx.fillText(f.e, Math.round(f.cx), Math.round(f.cy)));
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   drawParticles(dt);
   if (sleeping){
-    ctx.fillStyle = 'rgba(30,30,80,.42)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(30,30,80,.38)'; ctx.fillRect(0, 0, W, H);
+    const lamp = ctx.createRadialGradient(90, 170, 5, 90, 170, 90); lamp.addColorStop(0, 'rgba(255,220,150,.18)'); lamp.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = lamp; ctx.fillRect(0, 60, W, 200);
     ctx.fillStyle = '#fff6c9'; ctx.fillRect(150, 70, 8, 8); ctx.fillStyle = '#5b5b8f'; ctx.fillRect(153, 69, 6, 7);
     for (let i = 0; i < 7; i++) if (Math.sin(t * 3 + i * 2) > 0){ ctx.fillStyle = '#fff6c9'; ctx.fillRect(60 + i * 17, 20 + (i * 13) % 50, 1, 1); }
   }
@@ -820,6 +835,82 @@ function step(now){
   secT += dt; if (secT > .5){ secT = 0; renderStats(); }
   saveT += dt; if (saveT > 10){ saveT = 0; save(false); }
 }
+// faces & arms for each moment
+function faceOf(c){
+  if (sleeping) return { eyes: 'closed', mouth: 'smile' };
+  if (c.eatT > 0) return { eyes: 'arc', mouth: 'chew', amp: (Math.sin(t * 16) + 1) / 2 };
+  if (c.talking) return { eyes: c.blink > 0 ? 'blink' : 'open', mouth: c.mouthAmp > .08 ? 'open' : 'smile', amp: Math.min(1, c.mouthAmp) };
+  if (c.listening) return { eyes: 'wide', mouth: 'o' };
+  if (hugT > 0) return { eyes: 'closed', mouth: hugKiss && c.id === 'riri' ? 'kiss' : 'smile', blush: true };
+  if (c.grinT > 0 || (bath && bath.c === c)) return { eyes: 'arc', mouth: 'grin', blush: c.grinT > 1 };
+  const m = mood(c);
+  if (m < 30) return { eyes: 'sad', mouth: 'frown' };
+  return { eyes: c.blink > 0 ? 'blink' : 'open', mouth: m > 70 ? 'grin' : 'smile', look: c.look };
+}
+function outerArm(c, i, g){
+  const side = i === 0 ? -1 : 1;
+  if (c.eatT > 0) return { type: 'mouth', x: g.mx + side * 6, y: g.my + 3 };
+  if (c.listening) return { type: 'ear', x: g.left + (i === 0 ? 6 : c.d.w - 6), y: g.top + 28 };
+  if (c.cheer > 0) return { type: 'cheer', ph: t * 14 };
+  if (c.wave > 0) return { type: 'wave', ph: t * 16 };
+  if (c.talking) return { type: Math.sin(t * 2) > 0 ? 'hip' : 'wave', ph: t * 6 };
+  if (mood(c) < 30) return { type: 'down' };
+  return { type: 'thumb', w: c.wiggle > 0 ? Math.round(Math.sin(t * 22) * 2) : 0 };
+}
+function optsFor(c, i, extra){
+  const g = geo(c), f = faceOf(c);
+  const bob = Math.sin(t * 2.2 + i * 1.7) > .35 ? 1 : 0;
+  const legs = c.walking ? (Math.floor(t * 8) % 2 ? 'walkA' : 'walkB') : 'stand';
+  return Object.assign({ x: g.left, y: g.top, bob, legs, jx: c.wiggle > 0 ? Math.round(Math.sin(t * 40)) : 0 }, f, extra || {});
+}
+function drawPeople(sc){
+  const L = lctx; L.clearRect(0, 0, W, H);
+  const [ri, me] = chars, Pp = People;
+  if (sc === 'sleep'){
+    Pp.bed(L, BED.cx, BED.y);
+    chars.forEach((c, i) => { const [hx, hy] = SLEEP_HEAD[c.id]; const o = Object.assign({ x: hx, y: hy, only: 'head', hdx: 0, hdy: 0 }, faceOf(c)); Pp.part(L, c.id, 'back', o); Pp.part(L, c.id, 'head', o); });
+    Pp.blanket(L, BED.cx, 188);
+    // holding hands over the blanket
+    const S1 = PD.riri.col.S, S2 = PD.me.col.S;
+    L.fillStyle = S1; for (let k = 0; k <= 14; k++) L.fillRect(70 + k, 196 + Math.round(k * .45), 4, 4);
+    L.fillStyle = S2; for (let k = 0; k <= 14; k++) L.fillRect(108 - k, 196 + Math.round(k * .45), 5, 4);
+    L.fillStyle = S1; L.fillRect(84, 201, 6, 5); L.fillStyle = S2; L.fillRect(89, 201, 6, 5);
+  } else if (sc === 'bath'){
+    const c = bath.c, i = chars.indexOf(c), o = other(c), oi = chars.indexOf(o);
+    Pp.tub(L, TUB.cx, TUB.y, false);
+    const bo = optsFor(c, i, { only: 'bust', armL: { type: 'rim' }, armR: { type: 'rim' } });
+    ['back', 'body', 'head', 'armL', 'armR'].forEach(n => Pp.part(L, c.id, n, bo));
+    Pp.tub(L, TUB.cx, TUB.y, true);
+    // foam on the water
+    L.fillStyle = '#fff'; for (let k = 0; k < 12; k++){ const bx = TUB.cx - 34 + k * 6, by = TUB.y + 2 + Math.round(Math.sin(t * 3 + k) * 1.2); L.fillRect(bx, by, 6, 4); L.fillRect(bx + 1, by - 2, 4, 2); }
+    Pp.duck(L, TUB.cx + 18 + Math.round(Math.sin(t * 2) * 2), TUB.y - 4);
+    // the other one is cheering from the side
+    const oo = optsFor(o, oi, oi === 0 ? { armL: outerArm(o, 0, geo(o)), armR: { type: 'down' } } : { armL: { type: 'down' }, armR: outerArm(o, 1, geo(o)) });
+    Pp.draw(L, o.id, oo);
+  } else if (sc === 'hug'){
+    const gr = geo(ri), gm = geo(me);
+    const ro = optsFor(ri, 0, { hdx: 3, hdy: 2, armL: { type: 'to', x: gm.left + 30, y: gm.top + 70, reach: 50 }, armR: { type: 'to', x: gm.left + 50, y: gm.top + 80, reach: 60 } });
+    const mo = optsFor(me, 1, { hdx: -3, hdy: 3, armL: { type: 'to', x: gr.left + 12, y: gr.top + 52, reach: 60 }, armR: { type: 'down' } });
+    if (ri.walking || me.walking){ ro.armL = ro.armR = { type: 'down' }; mo.armL = { type: 'down' }; ro.hdx = ro.hdy = mo.hdx = mo.hdy = 0; ro.eyes = mo.eyes = 'open'; }
+    Pp.part(L, 'riri', 'back', ro);
+    ['back', 'legs', 'body', 'head', 'armR'].forEach(n => Pp.part(L, 'me', n, mo));
+    ['legs', 'body'].forEach(n => Pp.part(L, 'riri', n, ro));
+    Pp.part(L, 'me', 'armL', mo);
+    ['head', 'armR', 'armL'].forEach(n => Pp.part(L, 'riri', n, ro));
+  } else {
+    // standing, holding hands (unless someone is busy)
+    const gr = geo(ri), gm = geo(me);
+    const sR = [gr.left + PD.riri.shoulders[1][0], gr.top + PD.riri.shoulders[1][1]], sM = [gm.left + PD.me.shoulders[0][0], gm.top + PD.me.shoulders[0][1]];
+    const hold = [(sR[0] + sM[0]) / 2, GROUND - 48 + Math.min(ri.jy, me.jy) * .5];
+    const canHold = !ri.walking && !me.walking && Math.hypot(hold[0] - sM[0], hold[1] - sM[1]) < 46;
+    const ro = optsFor(ri, 0, { armL: outerArm(ri, 0, gr), armR: canHold ? { type: 'to', x: hold[0], y: hold[1] } : { type: 'down' } });
+    const mo = optsFor(me, 1, { armL: canHold ? { type: 'to', x: hold[0] + 1, y: hold[1] } : { type: 'down' }, armR: outerArm(me, 1, gm) });
+    if (ri.walking) ro.armL = { type: 'down' }; if (me.walking) mo.armR = { type: 'down' };
+    Pp.draw(L, 'riri', ro); Pp.draw(L, 'me', mo);
+  }
+  outline(layer);
+}
+
 let frameErr = false;
 function frame(now){
   try { step(now); }

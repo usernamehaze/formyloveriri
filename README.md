@@ -3,6 +3,8 @@
 A little pixel-art pet game for Riri. Play it at **https://usernamehaze.github.io/formyloveriri/**
 
 ## In the game
+- **🎮 Play:** two games. **🍒 Cherry Dash** is a 3-lane runner (swipe ← → to switch lanes, ↑ jump, ↓ slide), and **💖 Heart Quest** is a platformer where you run, jump and stomp bugs to reach your partner at the end.
+- **Poses:** tap them, hug (they walk together and embrace), sleep (they share a bed), bath (bubble tub), and feed (they hold the food).
 - **📷 Camera (top right):** snap what you're doing. It goes on the polaroid on the wall, like Locket. Tap **send** to text it to your person.
 - **💌 Letters:** every letter is an envelope (blue = from Me, pink = from Riri). Tap to open it and have the sender read it out loud. **✍️ write a letter** seals a new one.
 - **🐱 Mochi & 🐶 Sunny:** tap them to pet them. Rename them in `content.js` (`pets:`).
