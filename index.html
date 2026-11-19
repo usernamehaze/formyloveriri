@@ -348,12 +348,12 @@
     clearTimeout(window.__errT); window.__errT = setTimeout(() => t.classList.remove('show'), 7000);
   });
 </script>
-<script src="sync-config.js?v=20261120c"></script>
-<script src="content.js?v=20261120c"></script>
-<script src="js/icons.js?v=20261120c"></script>
-<script src="js/people.js?v=20261120c"></script>
-<script src="js/rooms.js?v=20261120c"></script>
-<script src="js/games.js?v=20261120c"></script>
+<script src="sync-config.js?v=20261120d"></script>
+<script src="content.js?v=20261120d"></script>
+<script src="js/icons.js?v=20261120d"></script>
+<script src="js/people.js?v=20261120d"></script>
+<script src="js/rooms.js?v=20261120d"></script>
+<script src="js/games.js?v=20261120d"></script>
 <script>
 (() => {
 'use strict';
@@ -1233,7 +1233,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-const APP_V = '20261120c';
+const APP_V = '20261120d';
 // ---------- who's holding this phone + synced data ----------
 let who = fetchStore('riri-who', null);                      // 'riri' | 'me' | null
 const myId = () => who || chars[sel].id;
@@ -1357,8 +1357,9 @@ function showEnvelopes(){
     const fromRiri = l.from === 'riri';
     const e = document.createElement('button');
     e.className = 'env' + (opened ? ' opened' : '');
-    e.style.setProperty('--ec', fromRiri ? '#ffd9e3' : '#d6e7f8');
-    e.style.setProperty('--ef', fromRiri ? '#ffc2d3' : '#bcd6f1');
+    const forRiri = l.to === 'riri';      // pink envelopes for Riri, red envelopes for Haze
+    e.style.setProperty('--ec', forRiri ? '#ffd9e3' : '#f26d6d');
+    e.style.setProperty('--ef', forRiri ? '#ffc2d3' : '#d94848');
     e.innerHTML = `<div class="paper-peek"></div><div class="front"></div><div class="flap"></div><div class="seal">${fromRiri ? '🎀' : '💗'}</div>
       <div class="to">to ${esc(nameOf(l.to))}</div><div class="meta">${esc(fmtDate(l.date))}</div>
       ${mineSent ? `<span class="rstate">${opened ? 'read 💕' : 'not opened yet'}</span>` : (opened ? '' : '<span class="new">NEW</span>')}`;
@@ -1870,6 +1871,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
 requestAnimationFrame(frame);
 })();
 </script>
-<script type="module" src="sync.js?v=20261120c"></script>
+<script type="module" src="sync.js?v=20261120d"></script>
 </body>
 </html>
