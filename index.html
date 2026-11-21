@@ -348,12 +348,12 @@
     clearTimeout(window.__errT); window.__errT = setTimeout(() => t.classList.remove('show'), 7000);
   });
 </script>
-<script src="sync-config.js?v=20261120d"></script>
-<script src="content.js?v=20261120d"></script>
-<script src="js/icons.js?v=20261120d"></script>
-<script src="js/people.js?v=20261120d"></script>
-<script src="js/rooms.js?v=20261120d"></script>
-<script src="js/games.js?v=20261120d"></script>
+<script src="sync-config.js?v=20261121a"></script>
+<script src="content.js?v=20261121a"></script>
+<script src="js/icons.js?v=20261121a"></script>
+<script src="js/people.js?v=20261121a"></script>
+<script src="js/rooms.js?v=20261121a"></script>
+<script src="js/games.js?v=20261121a"></script>
 <script>
 (() => {
 'use strict';
@@ -581,7 +581,7 @@ let particles = [], flying = [], bath = null, game = null, reading = null, voice
 let pushTimer = null, stateTs = 0;
 function pushState(){
   clearTimeout(pushTimer); pushTimer = null;
-  if (synced()) window.Sync.saveState({ chars: chars.map(c => ({ name: c.name, stats: c.stats })), pets: pets.map(q => ({ name: q.name, stats: q.stats })), frames: frameAssign, love, ts: stateTs, by: deviceId }).catch(() => {});
+  if (synced()) window.Sync.saveState({ chars: chars.map(c => ({ name: c.name, stats: c.stats })), pets: pets.map(q => ({ name: q.name, stats: q.stats })), love, ts: stateTs, by: deviceId }).catch(() => {});
 }
 function save(action = true){
   if (action){ stateTs = Date.now(); if (!pushTimer) pushTimer = setTimeout(pushState, 2500); }
@@ -623,6 +623,30 @@ function boop(f = 660, d = .08, type = 'square', vol = .05, slide = 0){
 // ---------- background (clean white, like your picture) ----------
 let room = fetchStore('riri-room-now', 'yard');
 let frameAssign = fetchStore('riri-frames', {});
+// each frame: { ref, ts }  (old saves stored just the ref)
+Object.keys(frameAssign).forEach(k => { if (typeof frameAssign[k] !== 'object' || !frameAssign[k]) frameAssign[k] = { ref: frameAssign[k] || null, ts: 0 }; });
+const frameRef = fid => (frameAssign[fid] || {}).ref || null;
+// frames nobody has picked: the big living-room frame shows your featured picture, all others show the newest photo
+const FRAME_DEFAULT = { living1: 'featured' };
+function setFrame(fid, ref, opts = {}){
+  const ts = opts.ts || Date.now();
+  frameAssign[fid] = { ref: ref || null, ts };
+  store('riri-frames', frameAssign); drawBG();
+  if (!opts.fromSync && synced()) window.Sync.add('photos', { id: 'frame:' + fid, type: 'frame', frame: fid, ref: ref || null, ts, date: today() }).catch(() => {});
+}
+function applyRemoteFrames(items){
+  let changed = false;
+  items.filter(it => it.type === 'frame' && it.frame).forEach(it => {
+    const cur = frameAssign[it.frame];
+    if (!cur || (it.ts || 0) > (cur.ts || 0)){ frameAssign[it.frame] = { ref: it.ref || null, ts: it.ts || 0 }; changed = true; }
+  });
+  if (changed){ store('riri-frames', frameAssign); drawBG(); }
+}
+function pushLocalFrames(){
+  if (!synced()) return;
+  const remoteTs = {}; remote.photos.filter(p => p.type === 'frame').forEach(p => remoteTs[p.frame] = p.ts || 0);
+  Object.entries(frameAssign).forEach(([fid, v]) => { if ((v.ts || 0) > (remoteTs[fid] || 0)) window.Sync.add('photos', { id: 'frame:' + fid, type: 'frame', frame: fid, ref: v.ref, ts: v.ts, date: today() }).catch(() => {}); });
+}
 const imgCache = new Map();
 function imgFor(src){
   if (!src) return null;
@@ -632,9 +656,9 @@ function imgFor(src){
 }
 const photoRef = ph => ph.id || ph.src;
 function photoForFrame(fid){
-  const all = lists.photos(), ref = frameAssign[fid];
+  const all = lists.photos(), ref = frameRef(fid) || FRAME_DEFAULT[fid] || 'newest';
   const featured = all.find(p => p.featured) || all[all.length - 1];
-  const ph = ref === 'newest' ? all[0] : ((ref && all.find(p => photoRef(p) === ref)) || featured);
+  const ph = ref === 'newest' ? all[0] : ref === 'featured' ? featured : (all.find(p => photoRef(p) === ref) || all[0]);
   return ph ? imgFor(ph.src) : null;
 }
 const isNight = () => { const h = new Date().getHours(); return sleeping || h >= 19 || h < 6; };
@@ -695,18 +719,19 @@ setInterval(drawBG, 60000);
 // frame picker: choose which photo goes in a frame
 function openFramePicker(fid, presetRef){
   const f = Object.values(Rooms.FRAMES).flat().find(x => x.id === fid);
-  if (presetRef){ frameAssign[fid] = presetRef; store('riri-frames', frameAssign); drawBG(); save(); toast('put in the ' + (f ? f.label : 'frame') + ' 🖼️'); return; }
+  if (presetRef){ setFrame(fid, presetRef); toast('put in the ' + (f ? f.label : 'frame') + ' 🖼️'); return; }
   openModal('frameM'); $('frameTitle').textContent = '🖼️ ' + (f ? f.label : 'frame');
   const body = $('frameBody'), all = lists.photos();
   body.innerHTML = `<div class="fgrid"></div><div class="hint">tap a photo to put it in this frame. "newest" always shows your latest locket photo.</div>`;
   const grid = body.querySelector('.fgrid');
-  const auto = document.createElement('button'); auto.innerHTML = '✨<br>newest'; if (frameAssign[fid] === 'newest') auto.className = 'on';
-  auto.onclick = () => { frameAssign[fid] = 'newest'; store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); };
+  const curRef = frameRef(fid) || FRAME_DEFAULT[fid] || 'newest';
+  const auto = document.createElement('button'); auto.innerHTML = '✨<br>newest'; if (curRef === 'newest') auto.className = 'on';
+  auto.onclick = () => { setFrame(fid, 'newest'); closeModal('frameM'); };
   grid.appendChild(auto);
   all.forEach(ph => {
-    const b = document.createElement('button'); if (frameAssign[fid] === photoRef(ph) || (!frameAssign[fid] && ph.featured)) b.className = 'on';
+    const b = document.createElement('button'); if (curRef === photoRef(ph) || (curRef === 'featured' && ph.featured)) b.className = 'on';
     const im = document.createElement('img'); im.src = ph.src; im.alt = ''; b.appendChild(im);
-    b.onclick = () => { frameAssign[fid] = photoRef(ph); store('riri-frames', frameAssign); drawBG(); save(); closeModal('frameM'); boop(880, .08, 'sine', .05, 1.4); };
+    b.onclick = () => { setFrame(fid, photoRef(ph)); closeModal('frameM'); boop(880, .08, 'sine', .05, 1.4); };
     grid.appendChild(b);
   });
   const cam = document.createElement('button'); cam.innerHTML = '📷<br>new'; cam.onclick = () => { closeModal('frameM'); openCam(); }; grid.appendChild(cam);
@@ -717,7 +742,7 @@ function chooseFrameFor(ph){
   body.innerHTML = '';
   Rooms.ROOMS.forEach(rm => (Rooms.FRAMES[rm.id] || []).forEach(f => {
     const b = document.createElement('button'); b.className = 'item';
-    b.innerHTML = `<span class="ic">${rm.icon}</span><span class="tt"></span>${frameAssign[f.id] === photoRef(ph) ? '<span class="new">here</span>' : ''}`;
+    b.innerHTML = `<span class="ic">${rm.icon}</span><span class="tt"></span>${frameRef(f.id) === photoRef(ph) ? '<span class="new">here</span>' : ''}`;
     b.querySelector('.tt').textContent = f.label;
     b.onclick = () => { closeModal('frameM'); openFramePicker(f.id, photoRef(ph)); if (rm.id !== room) setRoom(rm.id); };
     body.appendChild(b);
@@ -1233,7 +1258,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-const APP_V = '20261120d';
+const APP_V = '20261121a';
 // ---------- who's holding this phone + synced data ----------
 let who = fetchStore('riri-who', null);                      // 'riri' | 'me' | null
 const myId = () => who || chars[sel].id;
@@ -1255,7 +1280,7 @@ const lists = {
   letters: () => allLetters().filter(l => l.type !== 'journal'),
   journal: () => allLetters().filter(l => l.type === 'journal'),
   voice: () => dedupe([...remote.voice, ...localVoice, ...(LOVE.voice || []).map(v => Object.assign({ id: 'c:' + v.src }, v))]).filter(v => !v.deleted).sort(byDate),
-  photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || []).map(p => Object.assign({ id: 'c:' + p.src }, p))]).filter(p => !p.deleted).sort(byDate),
+  photos: () => dedupe([...remote.photos, ...localPhotos, ...(LOVE.photos || []).map(p => Object.assign({ id: 'c:' + p.src }, p))]).filter(p => !p.deleted && p.type !== 'frame').sort(byDate),
 };
 // save something new: to the shared database if connected, otherwise on this phone
 function addItem(kind, item){
@@ -1511,9 +1536,10 @@ function writePage(owner, it){
 let photoView = 'locket';
 function editPhoto(ph, ch){
   const it = editItem('photos', ph, ch);
-  if (it.deleted) Object.keys(frameAssign).forEach(k => { if (frameAssign[k] === it.id || frameAssign[k] === ph.src) delete frameAssign[k]; });
-  store('riri-frames', frameAssign); drawBG(); updateBadge();
+  if (it.deleted) Object.keys(frameAssign).forEach(k => { const r = frameRef(k); if (r && (r === it.id || r === ph.src)) setFrame(k, null); });
+  drawBG(); updateBadge();
 }
+let curPhotoId = null;
 function showPhotos(idx){
   const body = $('boxBody'), list = lists.photos();
   body.innerHTML = `<div id="pv"></div>`; photoView = 'locket';
@@ -1536,6 +1562,7 @@ function showPhotos(idx){
   }
   const i = Math.max(0, Math.min(idx > 0 ? idx : 0, list.length - 1)), ph = list[i];
   if (!ph){ pv.innerHTML = `<div class="empty">no photos yet 📸</div>`; newBtn(); return; }
+  curPhotoId = ph.id;
   pv.innerHTML = `<div class="locket"><img alt=""><div class="cap"></div></div><div class="lmeta"></div><div class="jtext"></div>
     <div class="prow"><button class="pbtn ghost" id="phEdit" style="flex:1">✏️ edit journal</button><button class="pbtn ghost" id="phFrame" style="flex:1">🖼️ frame it</button><button class="pbtn danger" id="phDel" aria-label="Delete">🗑️</button></div>
     <div class="thumbs" style="margin-top:10px"></div>`;
@@ -1834,9 +1861,10 @@ window.addEventListener('sync:ready', () => { syncBtn.dataset.s = window.Sync.st
 window.addEventListener('sync:items', e => {
   const { kind, items, added } = e.detail;
   remote[kind] = items;
-  if (kind === 'photos') drawBG();
+  if (kind === 'photos'){ applyRemoteFrames(items); drawBG(); }
   if (pendingCount()) migrateLocal();
-  const forMe = added.filter(it => it.from && it.from !== who);
+  if (kind === 'photos') pushLocalFrames();
+  const forMe = added.filter(it => it.from && it.from !== who && it.type !== 'frame' && !it.deleted);
   if (forMe.length){
     const it = forMe[0], n = nameOf(it.from);
     toast(it.type === 'journal' ? `📔 ${n} wrote in their journal!` : { letters: `💌 new letter from ${n}!`, photos: `📸 ${n} posted a photo!`, voice: `🎧 voice note from ${n}!` }[kind], 3500);
@@ -1845,6 +1873,11 @@ window.addEventListener('sync:items', e => {
   }
   updateBadge();
   const tabNow = kind === 'letters' && boxTab === 'journal' ? 'journal' : kind;
+  if (kind === 'photos' && $('box').classList.contains('show') && boxTab === 'photos' && !$('boxBody').querySelector('.compose')){
+    const fresh = added.some(it => it.from && it.from !== who && it.type !== 'frame' && !it.deleted);
+    if (fresh) toast(`📸 ${nameOf(added.find(it => it.from !== who).from)} posted a photo!`, 3500);
+    const list = lists.photos(), at = list.findIndex(p => p.id === curPhotoId); showPhotos(fresh || at < 0 ? 0 : at); return;
+  }
   if ($('box').classList.contains('show') && boxTab === tabNow && !$('boxBody').querySelector('.paper,.compose,.locket,.page')) showTab(tabNow);
 });
 window.addEventListener('sync:state', e => {
@@ -1854,7 +1887,7 @@ window.addEventListener('sync:state', e => {
   (st.chars || []).forEach((c, i) => { if (chars[i]){ if (c.name) chars[i].name = c.name === 'Me' ? 'Haze' : c.name; Object.assign(chars[i].stats, c.stats || {}); } });
   if (typeof st.love === 'number') love = st.love;
   (st.pets || []).forEach((p2, i) => { if (pets[i]){ if (p2.name) pets[i].name = ({ Mochi: 'Molly', Sunny: 'Shiro' })[p2.name] || p2.name; Object.assign(pets[i].stats, p2.stats || {}); } });
-  if (st.frames && typeof st.frames === 'object'){ frameAssign = st.frames; store('riri-frames', frameAssign); drawBG(); }
+
   stateTs = st.ts;
   decay(Math.max(0, (Date.now() - st.ts) / 1000));
   save(false); renderTabs(); renderStats();
@@ -1871,6 +1904,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
 requestAnimationFrame(frame);
 })();
 </script>
-<script type="module" src="sync.js?v=20261120d"></script>
+<script type="module" src="sync.js?v=20261121a"></script>
 </body>
 </html>
